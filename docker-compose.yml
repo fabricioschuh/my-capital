@@ -1,0 +1,65 @@
+services:
+  # ─────────────────────────────────────────────
+  # Local DynamoDB (in-memory for dev)
+  # ─────────────────────────────────────────────
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: my-capital-dynamodb
+    ports:
+      - '8000:8000'
+    command: '-jar DynamoDBLocal.jar -inMemory'
+    healthcheck:
+      # DynamoDB Local returns 400 for unauthenticated requests — that confirms it's alive
+      test: ['CMD-SHELL', 'curl -s -o /dev/null -w "%{http_code}" http://localhost:8000 | grep -qE "^(200|400)$"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  # ─────────────────────────────────────────────
+  # Backend (NestJS)
+  # Tables are created by the seed script or on first run
+  # ─────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: my-capital-backend
+    depends_on:
+      dynamodb-local:
+        condition: service_healthy
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      DYNAMODB_ENDPOINT: http://dynamodb-local:8000
+      EXCHANGE_RATE_PROVIDER: frankfurter
+      EXCHANGE_RATE_CACHE_TTL: 3600
+      CORS_ORIGINS: http://localhost:3000
+      LOG_LEVEL: debug
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:3001/api/categories && exit 0 || exit 1']
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # ─────────────────────────────────────────────
+  # Frontend (Next.js)
+  # ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: my-capital-frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - '3000:3000'
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:3001/api

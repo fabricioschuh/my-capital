@@ -1,0 +1,25 @@
+{
+  "name": "my-capital-infrastructure",
+  "version": "0.1.0",
+  "description": "My Capital - AWS CDK Infrastructure",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk",
+    "deploy": "cdk deploy --all",
+    "destroy": "cdk destroy --all",
+    "diff": "cdk diff",
+    "synth": "cdk synth"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.100.0",
+    "@types/node": "^20",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.100.0",
+    "constructs": "^10.0.0",
+    "source-map-support": "^0.5.21"
+  }
+}
