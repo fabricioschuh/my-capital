@@ -15,15 +15,17 @@ export const DYNAMODB_DOC_CLIENT = 'DYNAMODB_DOC_CLIENT';
       useFactory: (configService: ConfigService) => {
         const region = configService.get<string>('aws.region') ?? 'us-east-1';
         const endpoint = configService.get<string>('aws.dynamodbEndpoint');
+        const accessKeyId = configService.get<string>('aws.accessKeyId');
+        const secretAccessKey = configService.get<string>('aws.secretAccessKey');
 
         const clientConfig: any = { region };
 
         if (endpoint) {
           clientConfig.endpoint = endpoint;
-          clientConfig.credentials = {
-            accessKeyId: configService.get<string>('aws.accessKeyId') ?? 'local',
-            secretAccessKey: configService.get<string>('aws.secretAccessKey') ?? 'local',
-          };
+        }
+
+        if (accessKeyId && secretAccessKey) {
+          clientConfig.credentials = { accessKeyId, secretAccessKey };
         }
 
         return new DynamoDBClient(clientConfig);
