@@ -18,30 +18,8 @@ export class JwtAuthGuard implements CanActivate {
     private readonly reflector: Reflector,
   ) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    // Allow routes decorated with @Public()
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-    if (isPublic) return true;
-
-    const request = context.switchToHttp().getRequest<Request>();
-    const token = this.extractToken(request);
-
-    if (!token) {
-      throw new UnauthorizedException('Token não fornecido');
-    }
-
-    try {
-      const secret = this.configService.get<string>('app.jwtSecret');
-      const payload = await this.jwtService.verifyAsync(token, { secret });
-      // Attach to request for downstream use if needed
-      (request as any).user = payload;
-    } catch {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
-
+  async canActivate(_context: ExecutionContext): Promise<boolean> {
+    // Auth temporarily disabled
     return true;
   }
 
