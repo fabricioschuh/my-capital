@@ -80,6 +80,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAssets, useTransactAsset, useCreateAsset } from '@/hooks/use-assets';
+import { useI18n } from '@/lib/i18n/i18n-context';
 import { Loader2, PackagePlus, ArrowLeftRight, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -259,13 +260,13 @@ type TickerMode = 'required' | 'optional' | 'hidden';
 type CurrencyMode = 'BRL' | 'USD' | 'EUR' | 'free';
 
 interface CategoryConfig {
-  nameLabel: string;
+  nameLabelKey: string;
   namePlaceholder: string;
   tickerMode: TickerMode;
-  tickerLabel?: string;
+  tickerLabelKey?: string;
   tickerPlaceholder?: string;
   currency: CurrencyMode;
-  brokerLabel: string;
+  brokerLabelKey: string;
   brokerPlaceholder: string;
   showMaturity: boolean;
   showMaturityCheckbox: boolean;
@@ -274,147 +275,147 @@ interface CategoryConfig {
 
 const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   'emergency-reserve': {
-    nameLabel: 'Nome',
+    nameLabelKey: 'cc.name',
     namePlaceholder: 'ex: Reserva Nubank',
     tickerMode: 'hidden',
     currency: 'BRL',
-    brokerLabel: 'Banco / Corretora',
+    brokerLabelKey: 'cc.brokerBR',
     brokerPlaceholder: 'ex: Nubank',
     showMaturity: true,
     showMaturityCheckbox: true,
     isFixedIncome: false,
   },
   'cash': {
-    nameLabel: 'Nome',
+    nameLabelKey: 'cc.name',
     namePlaceholder: 'ex: Conta corrente XP',
     tickerMode: 'hidden',
     currency: 'BRL',
-    brokerLabel: 'Banco / Corretora',
+    brokerLabelKey: 'cc.brokerBR',
     brokerPlaceholder: 'ex: XP Investimentos',
     showMaturity: true,
     showMaturityCheckbox: true,
     isFixedIncome: false,
   },
   'fixed-income': {
-    nameLabel: 'Descrição',
+    nameLabelKey: 'cc.description',
     namePlaceholder: 'ex: CDB Itaú 110% CDI',
     tickerMode: 'hidden',
     currency: 'BRL',
-    brokerLabel: 'Banco emissor',
+    brokerLabelKey: 'cc.issuer',
     brokerPlaceholder: 'ex: Itaú, BTG, Nubank',
     showMaturity: true,
     showMaturityCheckbox: false,
     isFixedIncome: true,
   },
   'fixed-income-international': {
-    nameLabel: 'Nome do título',
+    nameLabelKey: 'cc.securityName',
     namePlaceholder: 'ex: US Treasury 2030',
     tickerMode: 'optional',
     tickerPlaceholder: 'ex: T 4.5 2030',
     currency: 'USD',
-    brokerLabel: 'Custodiante',
+    brokerLabelKey: 'cc.custodian',
     brokerPlaceholder: 'ex: Interactive Brokers',
     showMaturity: true,
     showMaturityCheckbox: true,
     isFixedIncome: false,
   },
   'private-pension': {
-    nameLabel: 'Nome do fundo',
+    nameLabelKey: 'cc.fundName',
     namePlaceholder: 'ex: PGBL XP Prev Renda',
     tickerMode: 'hidden',
     currency: 'BRL',
-    brokerLabel: 'Seguradora / Corretora',
+    brokerLabelKey: 'cc.insurer',
     brokerPlaceholder: 'ex: XP Vida e Previdência',
     showMaturity: true,
     showMaturityCheckbox: true,
     isFixedIncome: false,
   },
   'brazilian-stocks': {
-    nameLabel: 'Nome da empresa',
+    nameLabelKey: 'cc.companyName',
     namePlaceholder: 'ex: Itaú Unibanco',
     tickerMode: 'required',
-    tickerLabel: 'Ticker *',
+    tickerLabelKey: 'cc.tickerRequired',
     tickerPlaceholder: 'ex: ITUB3',
     currency: 'BRL',
-    brokerLabel: 'Corretora',
+    brokerLabelKey: 'cc.brokerBR',
     brokerPlaceholder: 'ex: XP Investimentos',
     showMaturity: false,
     showMaturityCheckbox: false,
     isFixedIncome: false,
   },
   'international-stocks': {
-    nameLabel: 'Nome da empresa',
+    nameLabelKey: 'cc.companyName',
     namePlaceholder: 'ex: Apple Inc.',
     tickerMode: 'required',
-    tickerLabel: 'Ticker *',
+    tickerLabelKey: 'cc.tickerRequired',
     tickerPlaceholder: 'ex: AAPL',
     currency: 'USD',
-    brokerLabel: 'Corretora',
+    brokerLabelKey: 'cc.brokerIntl',
     brokerPlaceholder: 'ex: Interactive Brokers',
     showMaturity: false,
     showMaturityCheckbox: false,
     isFixedIncome: false,
   },
   'sap-stocks': {
-    nameLabel: 'Nome da empresa',
+    nameLabelKey: 'cc.companyName',
     namePlaceholder: 'SAP SE',
     tickerMode: 'required',
-    tickerLabel: 'Ticker *',
+    tickerLabelKey: 'cc.tickerRequired',
     tickerPlaceholder: 'ex: SAP',
     currency: 'EUR',
-    brokerLabel: 'Corretora',
+    brokerLabelKey: 'cc.brokerIntl',
     brokerPlaceholder: 'ex: Interactive Brokers',
     showMaturity: false,
     showMaturityCheckbox: false,
     isFixedIncome: false,
   },
   'cryptocurrencies': {
-    nameLabel: 'Nome da moeda',
+    nameLabelKey: 'cc.currencyName',
     namePlaceholder: 'ex: Bitcoin',
     tickerMode: 'required',
-    tickerLabel: 'Símbolo *',
+    tickerLabelKey: 'cc.symbolRequired',
     tickerPlaceholder: 'ex: BTC',
     currency: 'USD',
-    brokerLabel: 'Exchange',
+    brokerLabelKey: 'cc.exchange',
     brokerPlaceholder: 'ex: Binance, Coinbase',
     showMaturity: false,
     showMaturityCheckbox: false,
     isFixedIncome: false,
   },
   'real-estate': {
-    nameLabel: 'Nome do FII',
+    nameLabelKey: 'cc.fiiName',
     namePlaceholder: 'ex: CSHG Real Estate FII',
     tickerMode: 'required',
-    tickerLabel: 'Ticker *',
+    tickerLabelKey: 'cc.tickerRequired',
     tickerPlaceholder: 'ex: HGRE11',
     currency: 'BRL',
-    brokerLabel: 'Corretora',
+    brokerLabelKey: 'cc.brokerBR',
     brokerPlaceholder: 'ex: XP Investimentos',
     showMaturity: false,
     showMaturityCheckbox: false,
     isFixedIncome: false,
   },
   'international-etfs': {
-    nameLabel: 'Nome do ETF',
+    nameLabelKey: 'cc.etfName',
     namePlaceholder: 'ex: Vanguard S&P 500',
     tickerMode: 'required',
-    tickerLabel: 'Ticker *',
+    tickerLabelKey: 'cc.tickerRequired',
     tickerPlaceholder: 'ex: VOO',
     currency: 'USD',
-    brokerLabel: 'Corretora',
+    brokerLabelKey: 'cc.brokerIntl',
     brokerPlaceholder: 'ex: Interactive Brokers',
     showMaturity: false,
     showMaturityCheckbox: false,
     isFixedIncome: false,
   },
   'brazilian-etfs': {
-    nameLabel: 'Nome do ETF',
+    nameLabelKey: 'cc.etfName',
     namePlaceholder: 'ex: iShares S&P 500',
     tickerMode: 'required',
-    tickerLabel: 'Ticker *',
+    tickerLabelKey: 'cc.tickerRequired',
     tickerPlaceholder: 'ex: IVVB11',
     currency: 'BRL',
-    brokerLabel: 'Corretora',
+    brokerLabelKey: 'cc.brokerBR',
     brokerPlaceholder: 'ex: XP Investimentos',
     showMaturity: false,
     showMaturityCheckbox: false,
@@ -423,12 +424,12 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
 };
 
 const DEFAULT_CONFIG: CategoryConfig = {
-  nameLabel: 'Nome',
+  nameLabelKey: 'cc.name',
   namePlaceholder: 'ex: Meu ativo',
   tickerMode: 'optional',
   tickerPlaceholder: 'ex: TICK3',
   currency: 'free',
-  brokerLabel: 'Corretora',
+  brokerLabelKey: 'cc.brokerBR',
   brokerPlaceholder: 'ex: XP Investimentos',
   showMaturity: false,
   showMaturityCheckbox: false,
@@ -478,6 +479,7 @@ interface TransactionDialogProps {
 /* ─── Mode selector ────────────────────────────────────────────────────────── */
 
 function ModeSelector({ onSelect }: { onSelect: (m: 'existing' | 'new') => void }) {
+  const { t } = useI18n();
   return (
     <div className="grid grid-cols-2 gap-3 py-2">
       <button
@@ -486,8 +488,8 @@ function ModeSelector({ onSelect }: { onSelect: (m: 'existing' | 'new') => void 
         className="flex flex-col items-center gap-2 rounded-xl border border-border/60 p-5 text-center hover:border-primary/50 hover:bg-muted/40 transition-colors"
       >
         <ArrowLeftRight className="h-7 w-7 text-muted-foreground" />
-        <span className="font-medium text-sm">Ativo existente</span>
-        <span className="text-xs text-muted-foreground">Registrar compra ou venda</span>
+        <span className="font-medium text-sm">{t('td.existing')}</span>
+        <span className="text-xs text-muted-foreground">{t('td.existingDesc')}</span>
       </button>
       <button
         type="button"
@@ -495,8 +497,8 @@ function ModeSelector({ onSelect }: { onSelect: (m: 'existing' | 'new') => void 
         className="flex flex-col items-center gap-2 rounded-xl border border-border/60 p-5 text-center hover:border-primary/50 hover:bg-muted/40 transition-colors"
       >
         <PackagePlus className="h-7 w-7 text-muted-foreground" />
-        <span className="font-medium text-sm">Novo ativo</span>
-        <span className="text-xs text-muted-foreground">Adicionar à categoria</span>
+        <span className="font-medium text-sm">{t('td.new')}</span>
+        <span className="text-xs text-muted-foreground">{t('td.newDesc')}</span>
       </button>
     </div>
   );
@@ -513,6 +515,7 @@ function ExistingAssetForm({
 }) {
   const { data: assets, isLoading: loadingAssets } = useAssets(categoryId);
   const { mutate: transact, isPending } = useTransactAsset();
+  const { t } = useI18n();
 
   const {
     register,
@@ -553,19 +556,19 @@ function ExistingAssetForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1.5">
-        <Label>Ativo</Label>
+        <Label>{t('td.asset')}</Label>
         <Select
           value={assetId}
           onValueChange={(v) => setValue('assetId', v, { shouldValidate: true })}
           disabled={loadingAssets}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Selecione o ativo..." />
+            <SelectValue placeholder={t('td.selectAsset')} />
           </SelectTrigger>
           <SelectContent>
             {assets?.length === 0 && (
               <div className="py-3 text-center text-sm text-muted-foreground">
-                Nenhum ativo nesta categoria
+                {t('td.noAssetsInCat')}
               </div>
             )}
             {assets?.map((a) => (
@@ -580,29 +583,29 @@ function ExistingAssetForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label>Tipo</Label>
+        <Label>{t('td.type')}</Label>
         <div className="flex gap-2">
           <Button type="button" variant={type === 'BUY' ? 'default' : 'outline'} size="sm"
             className={cn('flex-1', type === 'BUY' && 'bg-emerald-600 hover:bg-emerald-700')}
             onClick={() => setValue('type', 'BUY')}>
-            Compra
+            {t('td.buy')}
           </Button>
           <Button type="button" variant={type === 'SELL' ? 'default' : 'outline'} size="sm"
             className={cn('flex-1', type === 'SELL' && 'bg-red-600 hover:bg-red-700')}
             onClick={() => setValue('type', 'SELL')}>
-            Venda
+            {t('td.sell')}
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="qty">Quantidade</Label>
+          <Label htmlFor="qty">{t('td.quantity')}</Label>
           <Input id="qty" type="number" step="any" min="0" placeholder="0" {...register('quantity')} />
           {errors.quantity && <p className="text-xs text-destructive">{errors.quantity.message}</p>}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="price">Preço unitário</Label>
+          <Label htmlFor="price">{t('td.unitPrice')}</Label>
           <CurrencyInput
             id="price"
             value={pricePerUnit}
@@ -615,17 +618,17 @@ function ExistingAssetForm({
 
       {preview && (
         <div className="rounded-lg bg-muted/50 px-3 py-2 text-sm">
-          <span className="text-muted-foreground">Novo saldo: </span>
-          <span className="font-semibold">{preview.qty.toLocaleString('pt-BR', { maximumFractionDigits: 8 })} un</span>
+          <span className="text-muted-foreground">{t('td.newBalance')} </span>
+          <span className="font-semibold">{preview.qty.toLocaleString(undefined, { maximumFractionDigits: 8 })} un</span>
           <span className="text-muted-foreground"> @ </span>
-          <span className="font-semibold">R$ {preview.price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span>
+          <span className="font-semibold">R$ {preview.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span>
         </div>
       )}
 
       <DialogFooter className="pt-2">
         <Button type="submit" disabled={isPending} className="w-full">
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Confirmar
+          {t('td.confirm')}
         </Button>
       </DialogFooter>
     </form>
@@ -684,6 +687,7 @@ function NewAssetForm({
   const config = getCategoryConfig(categorySlug);
   const { mutate: createAsset, isPending } = useCreateAsset();
   const [noMaturity, setNoMaturity] = React.useState(false);
+  const { t } = useI18n();
 
   const defaultCurrency = config.currency === 'free' ? 'BRL' : config.currency;
 
@@ -745,7 +749,7 @@ function NewAssetForm({
       {/* ── Fixed income type selector ── */}
       {config.isFixedIncome && (
         <div className="space-y-1.5">
-          <Label>Tipo *</Label>
+          <Label>{t('td.type_label')}</Label>
           <div className="flex gap-2">
             {(['CDB', 'LCI', 'LCA'] as const).map((t) => (
               <Button
@@ -767,12 +771,12 @@ function NewAssetForm({
       {config.isFixedIncome && fiType && (
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label>Indexador *</Label>
+            <Label>{t('td.indexer')}</Label>
             <Select
               value={fiIndexer ?? ''}
               onValueChange={(v) => setValue('fiIndexer', v as 'CDI' | 'IPCA' | 'Prefixado')}
             >
-              <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t('td.selectIndexer')} /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="CDI">CDI</SelectItem>
                 <SelectItem value="IPCA">IPCA+</SelectItem>
@@ -799,7 +803,7 @@ function NewAssetForm({
       {/* ── Bank / broker (fixed income: shown early as it feeds name) ── */}
       {config.isFixedIncome && fiType && (
         <div className="space-y-1.5">
-          <Label htmlFor="broker-fi">{config.brokerLabel}</Label>
+          <Label htmlFor="broker-fi">{t(config.brokerLabelKey)}</Label>
           <BrokerInput
             id="broker-fi"
             placeholder={config.brokerPlaceholder}
@@ -814,7 +818,7 @@ function NewAssetForm({
       {config.isFixedIncome && fiType && (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="maturity">Vencimento</Label>
+            <Label htmlFor="maturity">{t('td.maturity')}</Label>
           </div>
           <Input id="maturity" type="month" disabled={noMaturity} {...register('maturity')} />
         </div>
@@ -823,13 +827,13 @@ function NewAssetForm({
       {/* ── Auto-generated name preview for fixed income ── */}
       {config.isFixedIncome && fiType && (
         <div className="space-y-1.5">
-          <Label htmlFor="name">{config.nameLabel} *</Label>
+          <Label htmlFor="name">{t(config.nameLabelKey)} *</Label>
           <Input
             id="name"
             placeholder={config.namePlaceholder}
             {...register('name')}
           />
-          <p className="text-xs text-muted-foreground">Gerado automaticamente — edite se quiser</p>
+          <p className="text-xs text-muted-foreground">{t('td.autoGenerated')}</p>
           {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
         </div>
       )}
@@ -839,14 +843,14 @@ function NewAssetForm({
         <>
           <div className={cn('grid gap-3', config.tickerMode !== 'hidden' ? 'grid-cols-2' : 'grid-cols-1')}>
             <div className={cn('space-y-1.5', config.tickerMode === 'hidden' && 'col-span-1')}>
-              <Label htmlFor="name">{config.nameLabel} *</Label>
+              <Label htmlFor="name">{t(config.nameLabelKey)} *</Label>
               <Input id="name" placeholder={config.namePlaceholder} {...register('name')} />
               {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
             </div>
 
             {config.tickerMode !== 'hidden' && (
               <div className="space-y-1.5">
-                <Label htmlFor="ticker">{config.tickerLabel ?? (config.tickerMode === 'required' ? 'Ticker *' : 'Ticker')}</Label>
+                <Label htmlFor="ticker">{t(config.tickerLabelKey ?? (config.tickerMode === 'required' ? 'cc.tickerRequired' : 'cc.ticker'))}</Label>
                 <Input
                   id="ticker"
                   placeholder={config.tickerPlaceholder ?? 'ex: TICK3'}
@@ -860,13 +864,13 @@ function NewAssetForm({
           {/* ── Currency ── */}
           {config.currency === 'free' ? (
             <div className="space-y-1.5">
-              <Label>Moeda *</Label>
+              <Label>{t('td.currency')}</Label>
               <Select value={currency} onValueChange={(v) => setValue('currency', v as 'BRL' | 'USD' | 'EUR')}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="BRL">BRL — Real</SelectItem>
-                  <SelectItem value="USD">USD — Dólar</SelectItem>
-                  <SelectItem value="EUR">EUR — Euro</SelectItem>
+                  <SelectItem value="BRL">{t('td.currencyBRL')}</SelectItem>
+                  <SelectItem value="USD">{t('td.currencyUSD')}</SelectItem>
+                  <SelectItem value="EUR">{t('td.currencyEUR')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -878,7 +882,7 @@ function NewAssetForm({
           {config.showMaturity && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="maturity">Vencimento</Label>
+                <Label htmlFor="maturity">{t('td.maturity')}</Label>
                 {config.showMaturityCheckbox && (
                   <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
                     <input
@@ -890,7 +894,7 @@ function NewAssetForm({
                       }}
                       className="h-3.5 w-3.5 rounded border-input accent-primary"
                     />
-                    Sem vencimento
+                    {t('td.noMaturity')}
                   </label>
                 )}
               </div>
@@ -902,7 +906,7 @@ function NewAssetForm({
 
           {/* ── Broker ── */}
           <div className="space-y-1.5">
-            <Label htmlFor="broker">{config.brokerLabel}</Label>
+            <Label htmlFor="broker">{t(config.brokerLabelKey)}</Label>
             <BrokerInput
               id="broker"
               placeholder={config.brokerPlaceholder}
@@ -917,12 +921,12 @@ function NewAssetForm({
       {/* ── Quantity + price ── */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="newQty">{config.isFixedIncome ? 'Valor investido (R$) *' : 'Quantidade *'}</Label>
+          <Label htmlFor="newQty">{config.isFixedIncome ? t('td.invested') : t('td.quantityStar')}</Label>
           <Input id="newQty" type="number" step="any" min="0" placeholder="0" {...register('quantity')} />
           {errors.quantity && <p className="text-xs text-destructive">{errors.quantity.message}</p>}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="newPrice">{config.isFixedIncome ? 'Preço unitário *' : 'Preço unitário *'}</Label>
+          <Label htmlFor="newPrice">{t('td.unitPriceStar')}</Label>
           <CurrencyInput
             id="newPrice"
             value={unitPrice}
@@ -936,9 +940,9 @@ function NewAssetForm({
       {/* ── Subtotal preview ── */}
       {subtotal !== null && subtotal > 0 && (
         <div className="rounded-lg bg-muted/50 px-3 py-2 text-sm flex items-center justify-between">
-          <span className="text-muted-foreground">Total investido</span>
+          <span className="text-muted-foreground">{t('td.totalInvested')}</span>
           <span className="font-semibold tabular-nums">
-            {currencySymbol} {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {currencySymbol} {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
       )}
@@ -953,7 +957,7 @@ function NewAssetForm({
       <DialogFooter className="pt-2">
         <Button type="submit" disabled={isPending} className="w-full">
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Adicionar ativo
+          {t('td.addAsset')}
         </Button>
       </DialogFooter>
     </form>
@@ -970,6 +974,7 @@ export function TransactionDialog({
   onOpenChange,
 }: TransactionDialogProps) {
   const [mode, setMode] = useState<'select' | 'existing' | 'new'>('select');
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!open) setMode('select');
@@ -977,8 +982,8 @@ export function TransactionDialog({
 
   const titles: Record<typeof mode, string> = {
     select: categoryName,
-    existing: `Lançar — ${categoryName}`,
-    new: `Novo ativo — ${categoryName}`,
+    existing: `${t('td.launch')} ${categoryName}`,
+    new: `${t('td.newTitle')} ${categoryName}`,
   };
 
   return (

@@ -38,6 +38,7 @@ import { AlertCircle, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
 import { CategorySummary } from '@/types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n/i18n-context';
 
 function CategoryRowSkeleton() {
   return (
@@ -60,6 +61,7 @@ type Tab = 'assets' | 'portfolio' | 'analysis';
 export function Dashboard() {
   const { data: summary, isLoading, isError, error, refetch } = usePortfolioSummary();
   const { mutate: updateCategory } = useUpdateCategory();
+  const { t } = useI18n();
 
   const [tab, setTab] = useState<Tab>('assets');
   const [orderedCategories, setOrderedCategories] = useState<CategorySummary[]>([]);
@@ -108,15 +110,19 @@ export function Dashboard() {
 
   const draggingCategory = orderedCategories.find((c) => c.id === draggingId);
 
+  const tabs = [
+    { key: 'assets' as Tab, label: t('dash.tabAssets') },
+    { key: 'portfolio' as Tab, label: t('dash.tabPortfolio') },
+    { key: 'analysis' as Tab, label: t('dash.tabAnalysis') },
+  ];
+
   return (
     <div>
       {/* Page header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Portfólio</h1>
-          <p className="mt-1 text-muted-foreground">
-            Gerencie e analise seus investimentos
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('dash.title')}</h1>
+          <p className="mt-1 text-muted-foreground">{t('dash.subtitle')}</p>
         </div>
         <ConfigureTargetsDialog />
       </div>
@@ -126,11 +132,11 @@ export function Dashboard() {
         <div className="mb-6 flex items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <div>
-            <p className="font-medium">Failed to load portfolio</p>
+            <p className="font-medium">{t('dash.errorTitle')}</p>
             <p className="text-sm opacity-80">{(error as Error)?.message}</p>
           </div>
           <button onClick={() => refetch()} className="ml-auto text-sm underline hover:no-underline">
-            Retry
+            {t('dash.retry')}
           </button>
         </div>
       )}
@@ -140,11 +146,7 @@ export function Dashboard() {
 
       {/* Tab bar */}
       <div className="mb-6 flex gap-1 rounded-lg border border-border/60 bg-muted/40 p-1 w-fit">
-        {([
-          { key: 'assets', label: 'Meus Ativos' },
-          { key: 'portfolio', label: 'Carteira' },
-          { key: 'analysis', label: 'Análise' },
-        ] as { key: Tab; label: string }[]).map(({ key, label }) => (
+        {tabs.map(({ key, label }) => (
           <button
             key={key}
             type="button"
@@ -161,7 +163,7 @@ export function Dashboard() {
         ))}
       </div>
 
-      {/* ── Meus Ativos tab ── */}
+      {/* ── My Assets tab ── */}
       {tab === 'assets' && (
         <>
           {isLoading ? (
@@ -186,8 +188,8 @@ export function Dashboard() {
                       onClick={() => setAllOpen((prev) => (prev === true ? false : true))}
                     >
                       {allOpen === true
-                        ? <><ChevronsDownUp className="mr-2 h-4 w-4" />Colapsar tudo</>
-                        : <><ChevronsUpDown className="mr-2 h-4 w-4" />Expandir tudo</>
+                        ? <><ChevronsDownUp className="mr-2 h-4 w-4" />{t('dash.collapseAll')}</>
+                        : <><ChevronsUpDown className="mr-2 h-4 w-4" />{t('dash.expandAll')}</>
                       }
                     </Button>
                   </div>
@@ -210,7 +212,9 @@ export function Dashboard() {
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted" />
                       <div className="flex-1">
                         <p className="font-semibold text-xl">{draggingCategory.name}</p>
-                        <p className="text-sm text-muted-foreground">{draggingCategory.assets} ativos</p>
+                        <p className="text-sm text-muted-foreground">
+                          {draggingCategory.assets} {draggingCategory.assets === 1 ? t('dash.asset') : t('dash.assets')}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -224,14 +228,14 @@ export function Dashboard() {
               <div className="rounded-full bg-muted p-4 mb-4">
                 <AlertCircle className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold">No categories found</h3>
-              <p className="text-muted-foreground mt-1">Run the seed script to populate initial data.</p>
+              <h3 className="text-lg font-semibold">{t('dash.emptyTitle')}</h3>
+              <p className="text-muted-foreground mt-1">{t('dash.emptyMsg')}</p>
             </div>
           )}
         </>
       )}
 
-      {/* ── Carteira tab ── */}
+      {/* ── Portfolio tab ── */}
       {tab === 'portfolio' && (
         <>
           {isLoading ? (
@@ -246,7 +250,7 @@ export function Dashboard() {
         </>
       )}
 
-      {/* ── Análise tab ── */}
+      {/* ── Analysis tab ── */}
       {tab === 'analysis' && <AnalysisTickerTab />}
     </div>
   );

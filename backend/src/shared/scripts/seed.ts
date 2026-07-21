@@ -6,6 +6,7 @@ import {
   DynamoDBClient,
   CreateTableCommand,
   ResourceInUseException,
+  waitUntilTableExists,
 } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import * as dotenv from 'dotenv';
@@ -13,14 +14,19 @@ import { v4 as uuidv4 } from 'uuid';
 
 dotenv.config();
 
-const client = new DynamoDBClient({
+const clientConfig: any = {
   region: process.env.AWS_REGION ?? 'us-east-1',
-  endpoint: process.env.DYNAMODB_ENDPOINT ?? 'http://localhost:8000',
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? 'local',
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? 'local',
   },
-});
+};
+
+if (process.env.DYNAMODB_ENDPOINT) {
+  clientConfig.endpoint = process.env.DYNAMODB_ENDPOINT;
+}
+
+const client = new DynamoDBClient(clientConfig);
 
 const docClient = DynamoDBDocumentClient.from(client);
 
@@ -51,6 +57,9 @@ async function createTables(): Promise<void> {
       BillingMode: 'PAY_PER_REQUEST',
     }));
     console.log('  created: ' + CATEGORIES_TABLE);
+    console.log('  waiting for table to become ACTIVE...');
+    await waitUntilTableExists({ client, maxWaitTime: 60 }, { TableName: CATEGORIES_TABLE });
+    console.log('  ready: ' + CATEGORIES_TABLE);
   } catch (e: any) {
     if (e.name === 'ResourceInUseException') {
       console.log('  exists: ' + CATEGORIES_TABLE);
@@ -76,6 +85,9 @@ async function createTables(): Promise<void> {
       ],
     }));
     console.log('  created: ' + ASSETS_TABLE);
+    console.log('  waiting for table to become ACTIVE...');
+    await waitUntilTableExists({ client, maxWaitTime: 60 }, { TableName: ASSETS_TABLE });
+    console.log('  ready: ' + ASSETS_TABLE);
   } catch (e: any) {
     if (e.name === 'ResourceInUseException') {
       console.log('  exists: ' + ASSETS_TABLE);

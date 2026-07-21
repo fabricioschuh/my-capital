@@ -4,10 +4,12 @@ import { useState, useTransition, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { TrendingUp, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { authService } from '@/services/auth.service';
+import { useI18n } from '@/lib/i18n/i18n-context';
 
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
+  const { t } = useI18n();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -24,7 +26,7 @@ function LoginForm() {
         const from = params.get('from') ?? '/';
         router.replace(from);
       } catch (err) {
-        setError((err as Error).message ?? 'Credenciais inválidas');
+        setError((err as Error).message ?? t('login.error'));
       }
     });
   };
@@ -36,7 +38,7 @@ function LoginForm() {
     >
       <div className="space-y-1.5">
         <label htmlFor="username" className="text-sm font-medium">
-          Usuário
+          {t('login.username')}
         </label>
         <input
           id="username"
@@ -52,7 +54,7 @@ function LoginForm() {
 
       <div className="space-y-1.5">
         <label htmlFor="password" className="text-sm font-medium">
-          Senha
+          {t('login.password')}
         </label>
         <div className="relative">
           <input
@@ -89,10 +91,10 @@ function LoginForm() {
         {isPending ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Entrando…
+            {t('login.loading')}
           </>
         ) : (
-          'Entrar'
+          t('login.submit')
         )}
       </button>
     </form>
@@ -100,6 +102,8 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
+  const { t } = useI18n();
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-8">
@@ -109,7 +113,7 @@ export default function LoginPage() {
             <TrendingUp className="h-7 w-7 text-primary" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">My Capital</h1>
-          <p className="text-sm text-muted-foreground">Acesse sua carteira de investimentos</p>
+          <p className="text-sm text-muted-foreground">{t('login.subtitle')}</p>
         </div>
 
         <Suspense fallback={<div className="h-64 rounded-2xl border border-border/60 bg-card animate-pulse" />}>

@@ -9,6 +9,7 @@ import {
   ChevronDown, X, Plus, ChevronsDownUp, ChevronsUpDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n/i18n-context';
 
 const STORAGE_KEY = 'analysis-tickers'; // kept for reference only, unused
 
@@ -26,10 +27,10 @@ function signalBg(s: Signal) {
   return 'bg-muted text-muted-foreground';
 }
 
-function signalLabel(s: Signal) {
-  if (s === 'cheap') return 'Barato';
-  if (s === 'expensive') return 'Caro';
-  if (s === 'fair') return 'Justo';
+function signalLabel(s: Signal, t: (key: string) => string) {
+  if (s === 'cheap') return t('sig.cheap');
+  if (s === 'expensive') return t('sig.expensive');
+  if (s === 'fair') return t('sig.fair');
   return '—';
 }
 
@@ -119,32 +120,32 @@ function overallSignal(data: FundamentalsResult): { signal: Signal; score: numbe
 
 /* ─── Formatters ────────────────────────────────────────────────────────────── */
 
-function fmt(v: number | undefined, opts?: { pct?: boolean; dec?: number; mult100?: boolean }): string {
+function fmt(v: number | undefined, opts?: { pct?: boolean; dec?: number; mult100?: boolean }, numLocale = 'en-US'): string {
   if (v == null) return '—';
   let val = v;
   if (opts?.mult100) val = v * 100;
   if (opts?.pct) return `${val.toFixed(opts.dec ?? 1)}%`;
-  return val.toLocaleString('pt-BR', {
+  return val.toLocaleString(numLocale, {
     minimumFractionDigits: opts?.dec ?? 2,
     maximumFractionDigits: opts?.dec ?? 2,
   });
 }
 
-function fmtCurrency(v: number | undefined, currency: string): string {
+function fmtCurrency(v: number | undefined, currency: string, numLocale = 'en-US'): string {
   if (v == null) return '—';
-  return new Intl.NumberFormat('pt-BR', {
+  return new Intl.NumberFormat(numLocale, {
     style: 'currency',
     currency,
     maximumFractionDigits: 2,
   }).format(v);
 }
 
-function fmtMarketCap(v: number | undefined): string {
+function fmtMarketCap(v: number | undefined, numLocale = 'en-US'): string {
   if (v == null) return '—';
   if (v >= 1e12) return `${(v / 1e12).toFixed(1)}T`;
   if (v >= 1e9) return `${(v / 1e9).toFixed(1)}B`;
   if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
-  return v.toLocaleString('pt-BR');
+  return v.toLocaleString(numLocale);
 }
 
 function fmtDy(v: number | undefined): string {
@@ -153,14 +154,14 @@ function fmtDy(v: number | undefined): string {
   return `${pct.toFixed(2)}%`;
 }
 
-function recommendationBadge(key: string | undefined) {
+function recommendationBadge(key: string | undefined, t: (key: string) => string) {
   if (!key) return null;
   const map: Record<string, { label: string; cls: string }> = {
-    strongBuy: { label: 'Forte compra', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
-    buy: { label: 'Compra', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
-    hold: { label: 'Neutro', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-    sell: { label: 'Venda', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-    strongSell: { label: 'Forte venda', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+    strongBuy: { label: t('rec.strongBuy'), cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+    buy: { label: t('rec.buy'), cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+    hold: { label: t('rec.hold'), cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+    sell: { label: t('rec.sell'), cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+    strongSell: { label: t('rec.strongSell'), cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
   };
   const entry = map[key];
   if (!entry) return null;
@@ -206,20 +207,22 @@ function MetricRow({ label, value, signal, tooltip }: {
 function RangeBar({ current, low, high, currency }: {
   current?: number; low?: number; high?: number; currency: string;
 }) {
+  const { t, locale } = useI18n();
+  const numLocale = locale === 'pt-BR' ? 'pt-BR' : 'en-US';
   if (!current || !low || !high || high === low) return null;
   const pct = Math.min(Math.max(((current - low) / (high - low)) * 100, 0), 100);
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between text-xs text-muted-foreground">
-        <span>Mín 52s: {fmtCurrency(low, currency)}</span>
-        <span>Máx 52s: {fmtCurrency(high, currency)}</span>
+        <span>{t('rb.min52')} {fmtCurrency(low, currency, numLocale)}</span>
+        <span>{t('rb.max52')} {fmtCurrency(high, currency, numLocale)}</span>
       </div>
       <div className="relative h-2 rounded-full bg-muted overflow-hidden">
         <div className="absolute h-full rounded-full bg-primary/60" style={{ width: `${pct}%` }} />
         <div className="absolute top-1/2 -translate-y-1/2 h-3 w-1 rounded-full bg-primary -translate-x-1/2" style={{ left: `${pct}%` }} />
       </div>
       <p className="text-xs text-center text-muted-foreground">
-        Preço atual: {fmtCurrency(current, currency)} ({pct.toFixed(0)}% da faixa anual)
+        {t('rb.currentPrice', { price: fmtCurrency(current, currency, numLocale), pct: pct.toFixed(0) })}
       </p>
     </div>
   );
@@ -228,57 +231,59 @@ function RangeBar({ current, low, high, currency }: {
 /* ─── ETF panel ─────────────────────────────────────────────────────────────── */
 
 function EtfPanel({ etf, currency }: { etf: EtfData; currency: string }) {
+  const { t, locale } = useI18n();
+  const numLocale = locale === 'pt-BR' ? 'pt-BR' : 'en-US';
   return (
     <div className="space-y-4">
       {/* Fund info + returns */}
       <div className="grid md:grid-cols-2 gap-4">
         <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Dados do Fundo</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('etf.fundInfo')}</h4>
           {etf.fundFamily && (
-            <MetricRow label="Gestora" value={etf.fundFamily} />
+            <MetricRow label={t('etf.manager')} value={etf.fundFamily} />
           )}
           {etf.categoryName && (
-            <MetricRow label="Categoria" value={etf.categoryName} />
+            <MetricRow label={t('etf.category')} value={etf.categoryName} />
           )}
           <MetricRow
-            label="Taxa de administração"
+            label={t('etf.expenseRatio')}
             value={etf.expenseRatio != null ? `${(etf.expenseRatio * 100).toFixed(2)}%` : '—'}
-            tooltip="Taxa anual cobrada pelo fundo."
+            tooltip={t('etf.expenseRatioTip')}
           />
           <MetricRow
-            label="Patrimônio líquido"
-            value={etf.totalAssets != null ? fmtMarketCap(etf.totalAssets) : '—'}
+            label={t('etf.netAssets')}
+            value={etf.totalAssets != null ? fmtMarketCap(etf.totalAssets, numLocale) : '—'}
           />
           {etf.morningStarRating != null && (
-            <MetricRow label="Rating Morningstar" value={'★'.repeat(etf.morningStarRating) + '☆'.repeat(5 - etf.morningStarRating)} />
+            <MetricRow label={t('etf.morningstar')} value={'★'.repeat(etf.morningStarRating) + '☆'.repeat(5 - etf.morningStarRating)} />
           )}
         </div>
 
         <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Retornos</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('etf.returns')}</h4>
           <MetricRow label="YTD" value={etf.ytdReturn != null ? `${(etf.ytdReturn * 100).toFixed(2)}%` : '—'} />
-          <MetricRow label="1 ano" value={etf.oneYearReturn != null ? `${(etf.oneYearReturn * 100).toFixed(2)}%` : '—'} />
-          <MetricRow label="3 anos" value={etf.threeYearReturn != null ? `${(etf.threeYearReturn * 100).toFixed(2)}%` : '—'} />
-          <MetricRow label="5 anos" value={etf.fiveYearReturn != null ? `${(etf.fiveYearReturn * 100).toFixed(2)}%` : '—'} />
+          <MetricRow label="1Y" value={etf.oneYearReturn != null ? `${(etf.oneYearReturn * 100).toFixed(2)}%` : '—'} />
+          <MetricRow label="3Y" value={etf.threeYearReturn != null ? `${(etf.threeYearReturn * 100).toFixed(2)}%` : '—'} />
+          <MetricRow label="5Y" value={etf.fiveYearReturn != null ? `${(etf.fiveYearReturn * 100).toFixed(2)}%` : '—'} />
         </div>
       </div>
 
       {/* Risk metrics + holdings valuations */}
       <div className="grid md:grid-cols-2 gap-4">
         <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Risco</h4>
-          <MetricRow label="Beta (3 anos)" value={fmt(etf.beta3Year, { dec: 2 })} tooltip="Volatilidade vs. benchmark." />
-          <MetricRow label="Sharpe Ratio" value={fmt(etf.sharpeRatio, { dec: 2 })} tooltip="Retorno ajustado ao risco. Acima de 1 = bom." />
-          <MetricRow label="Alpha" value={fmt(etf.alpha, { dec: 2 })} tooltip="Retorno acima do benchmark." />
-          <MetricRow label="Desvio padrão" value={etf.standardDeviation != null ? `${(etf.standardDeviation * 100).toFixed(2)}%` : '—'} tooltip="Volatilidade histórica anualizada." />
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('etf.risk')}</h4>
+          <MetricRow label={t('etf.beta3y')} value={fmt(etf.beta3Year, { dec: 2 }, numLocale)} tooltip={t('etf.beta3yTip')} />
+          <MetricRow label={t('etf.sharpe')} value={fmt(etf.sharpeRatio, { dec: 2 }, numLocale)} tooltip={t('etf.sharpeTip')} />
+          <MetricRow label={t('etf.alpha')} value={fmt(etf.alpha, { dec: 2 }, numLocale)} tooltip={t('etf.alphaTip')} />
+          <MetricRow label={t('etf.stdDev')} value={etf.standardDeviation != null ? `${(etf.standardDeviation * 100).toFixed(2)}%` : '—'} tooltip={t('etf.stdDevTip')} />
         </div>
 
         {(etf.holdingsPE != null || etf.holdingsPB != null || etf.holdingsPS != null) && (
           <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Valuation das Holdings</h4>
-            <MetricRow label="P/L médio" value={fmt(etf.holdingsPE, { dec: 1 })} tooltip="P/L agregado das ações na carteira do ETF." />
-            <MetricRow label="P/VP médio" value={fmt(etf.holdingsPB, { dec: 2 })} />
-            <MetricRow label="P/S médio" value={fmt(etf.holdingsPS, { dec: 2 })} />
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('etf.holdingsValuation')}</h4>
+            <MetricRow label={t('etf.avgPE')} value={fmt(etf.holdingsPE, { dec: 1 }, numLocale)} tooltip={t('etf.avgPETip')} />
+            <MetricRow label={t('etf.avgPB')} value={fmt(etf.holdingsPB, { dec: 2 }, numLocale)} />
+            <MetricRow label={t('etf.avgPS')} value={fmt(etf.holdingsPS, { dec: 2 }, numLocale)} />
           </div>
         )}
       </div>
@@ -286,7 +291,7 @@ function EtfPanel({ etf, currency }: { etf: EtfData; currency: string }) {
       {/* Top holdings */}
       {etf.topHoldings && etf.topHoldings.length > 0 && (
         <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Top Holdings</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('etf.topHoldings')}</h4>
           <div className="space-y-2">
             {etf.topHoldings.map((h, i) => (
               <div key={i} className="flex items-center gap-2">
@@ -311,7 +316,7 @@ function EtfPanel({ etf, currency }: { etf: EtfData; currency: string }) {
       {/* Sector weightings */}
       {etf.sectorWeightings && etf.sectorWeightings.length > 0 && (
         <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Alocação Setorial</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('etf.sectorAlloc')}</h4>
           <div className="space-y-2">
             {etf.sectorWeightings
               .sort((a, b) => b.pct - a.pct)
@@ -335,6 +340,8 @@ function EtfPanel({ etf, currency }: { etf: EtfData; currency: string }) {
 /* ─── Fair value panel (stocks) ─────────────────────────────────────────────── */
 
 function FairValuePanel({ data }: { data: FundamentalsResult }) {
+  const { t, locale } = useI18n();
+  const numLocale = locale === 'pt-BR' ? 'pt-BR' : 'en-US';
   const { analystTarget, grahamValue, recentUpgrades, currentPrice, currency } = data;
   const hasContent = analystTarget || grahamValue || (recentUpgrades && recentUpgrades.length > 0);
   if (!hasContent) return null;
@@ -359,27 +366,27 @@ function FairValuePanel({ data }: { data: FundamentalsResult }) {
         {grahamValue && (
           <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-              Valor Intrínseco (Graham)
+              {t('fv.grahamTitle')}
             </h4>
             <MetricRow
-              label="Número de Graham"
-              value={fmtCurrency(grahamValue.grahamNumber, currency)}
-              tooltip="√(22.5 × LPA × VPA). Estimativa conservadora do valor justo."
+              label={t('fv.grahamNumber')}
+              value={fmtCurrency(grahamValue.grahamNumber, currency, numLocale)}
+              tooltip={t('fv.grahamTip')}
             />
             <MetricRow
-              label="LPA (Trailing EPS)"
-              value={fmtCurrency(grahamValue.eps, currency)}
+              label={t('fv.eps')}
+              value={fmtCurrency(grahamValue.eps, currency, numLocale)}
             />
             <MetricRow
-              label="VPA (Book Value/Share)"
-              value={fmtCurrency(grahamValue.bookValuePerShare, currency)}
+              label={t('fv.bvps')}
+              value={fmtCurrency(grahamValue.bookValuePerShare, currency, numLocale)}
             />
             {grahamValue.marginOfSafety != null && (
               <MetricRow
-                label="Margem de segurança"
+                label={t('fv.marginOfSafety')}
                 value={`${grahamValue.marginOfSafety.toFixed(1)}%`}
                 signal={grahamValue.marginOfSafety > 20 ? 'cheap' : grahamValue.marginOfSafety < -20 ? 'expensive' : 'fair'}
-                tooltip="(Graham − Preço atual) / Preço. Positivo = abaixo do valor intrínseco."
+                tooltip={t('fv.marginTip')}
               />
             )}
           </div>
@@ -389,39 +396,39 @@ function FairValuePanel({ data }: { data: FundamentalsResult }) {
         {analystTarget && (
           <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-              Consenso de Analistas
+              {t('fv.analystTitle')}
               {analystTarget.numberOfAnalysts != null && (
-                <span className="ml-1.5 font-normal normal-case">({analystTarget.numberOfAnalysts} analistas)</span>
+                <span className="ml-1.5 font-normal normal-case">({t('fv.analysts', { n: String(analystTarget.numberOfAnalysts) })})</span>
               )}
             </h4>
             {analystTarget.recommendationKey && (
               <div className="mb-3 flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Recomendação:</span>
-                {recommendationBadge(analystTarget.recommendationKey)}
+                <span className="text-sm text-muted-foreground">{t('fv.recommendation')}</span>
+                {recommendationBadge(analystTarget.recommendationKey, t)}
               </div>
             )}
             <MetricRow
-              label="Preço-alvo médio"
-              value={fmtCurrency(analystTarget.targetMean, currency)}
+              label={t('fv.targetMean')}
+              value={fmtCurrency(analystTarget.targetMean, currency, numLocale)}
               signal={analystTarget.upsideMean != null
                 ? (analystTarget.upsideMean > 10 ? 'cheap' : analystTarget.upsideMean < -10 ? 'expensive' : 'fair')
                 : undefined}
             />
             {analystTarget.upsideMean != null && (
               <MetricRow
-                label="Upside potencial"
+                label={t('fv.upside')}
                 value={`${analystTarget.upsideMean.toFixed(1)}%`}
                 signal={analystTarget.upsideMean > 10 ? 'cheap' : analystTarget.upsideMean < -10 ? 'expensive' : 'fair'}
-                tooltip="(Alvo médio − Preço atual) / Preço atual."
+                tooltip={t('fv.upsideTip')}
               />
             )}
-            <MetricRow label="Alvo alto" value={fmtCurrency(analystTarget.targetHigh, currency)} />
-            <MetricRow label="Alvo baixo" value={fmtCurrency(analystTarget.targetLow, currency)} />
+            <MetricRow label={t('fv.targetHigh')} value={fmtCurrency(analystTarget.targetHigh, currency, numLocale)} />
+            <MetricRow label={t('fv.targetLow')} value={fmtCurrency(analystTarget.targetLow, currency, numLocale)} />
             {currentPrice && analystTarget.targetHigh && analystTarget.targetLow && (
               <div className="mt-3 space-y-1.5">
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{fmtCurrency(analystTarget.targetLow, currency)}</span>
-                  <span>{fmtCurrency(analystTarget.targetHigh, currency)}</span>
+                  <span>{fmtCurrency(analystTarget.targetLow, currency, numLocale)}</span>
+                  <span>{fmtCurrency(analystTarget.targetHigh, currency, numLocale)}</span>
                 </div>
                 <div className="relative h-2 rounded-full bg-muted overflow-hidden">
                   {(() => {
@@ -438,7 +445,7 @@ function FairValuePanel({ data }: { data: FundamentalsResult }) {
                     );
                   })()}
                 </div>
-                <p className="text-xs text-center text-muted-foreground">Preço atual na faixa dos analistas</p>
+                <p className="text-xs text-center text-muted-foreground">{t('rb.priceInRange')}</p>
               </div>
             )}
           </div>
@@ -448,16 +455,16 @@ function FairValuePanel({ data }: { data: FundamentalsResult }) {
       {/* Recent upgrades/downgrades */}
       {recentUpgrades && recentUpgrades.length > 0 && (
         <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Revisões Recentes</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('fv.recentReviews')}</h4>
           <div className="overflow-x-auto -mx-1">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/40">
-                  <th className="text-left text-xs text-muted-foreground font-medium pb-2 pr-3">Data</th>
-                  <th className="text-left text-xs text-muted-foreground font-medium pb-2 pr-3">Corretora</th>
-                  <th className="text-left text-xs text-muted-foreground font-medium pb-2 pr-3">De</th>
-                  <th className="text-left text-xs text-muted-foreground font-medium pb-2 pr-3">Para</th>
-                  <th className="text-right text-xs text-muted-foreground font-medium pb-2">Preço-alvo</th>
+                  <th className="text-left text-xs text-muted-foreground font-medium pb-2 pr-3">{t('fv.date')}</th>
+                  <th className="text-left text-xs text-muted-foreground font-medium pb-2 pr-3">{t('fv.firm')}</th>
+                  <th className="text-left text-xs text-muted-foreground font-medium pb-2 pr-3">{t('fv.from')}</th>
+                  <th className="text-left text-xs text-muted-foreground font-medium pb-2 pr-3">{t('fv.to')}</th>
+                  <th className="text-right text-xs text-muted-foreground font-medium pb-2">{t('fv.targetPrice')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -467,7 +474,7 @@ function FairValuePanel({ data }: { data: FundamentalsResult }) {
                     <td className="py-2 pr-3 text-xs font-medium">{u.firm ?? '—'}</td>
                     <td className="py-2 pr-3">{gradeBadge(u.fromGrade) ?? <span className="text-xs text-muted-foreground">—</span>}</td>
                     <td className="py-2 pr-3">{gradeBadge(u.toGrade) ?? <span className="text-xs text-muted-foreground">—</span>}</td>
-                    <td className="py-2 text-right text-xs tabular-nums">{u.targetPrice != null ? fmtCurrency(u.targetPrice, currency) : '—'}</td>
+                    <td className="py-2 text-right text-xs tabular-nums">{u.targetPrice != null ? fmtCurrency(u.targetPrice, currency, numLocale) : '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -482,6 +489,8 @@ function FairValuePanel({ data }: { data: FundamentalsResult }) {
 /* ─── Expanded fundamentals content ────────────────────────────────────────── */
 
 function FundamentalsContent({ data }: { data: FundamentalsResult }) {
+  const { t, locale } = useI18n();
+  const numLocale = locale === 'pt-BR' ? 'pt-BR' : 'en-US';
   const isEtf = data.instrumentType === 'ETF' || data.instrumentType === 'MUTUALFUND';
   const { signal } = overallSignal(data);
   const OverallIcon = signal === 'cheap' ? TrendingUp : signal === 'expensive' ? TrendingDown : Minus;
@@ -493,12 +502,12 @@ function FundamentalsContent({ data }: { data: FundamentalsResult }) {
         <OverallIcon className="h-5 w-5 shrink-0" />
         <div>
           <p className="font-semibold text-sm">
-            {signal === 'cheap' ? 'Ativo potencialmente barato' :
-              signal === 'expensive' ? 'Ativo potencialmente caro' :
-              'Preço justo / dados insuficientes'}
+            {signal === 'cheap' ? t('sig.cheapVerdict') :
+              signal === 'expensive' ? t('sig.expensiveVerdict') :
+              t('sig.fairVerdict')}
           </p>
           <p className="text-xs opacity-80 mt-0.5">
-            Baseado em múltiplos de valuation, rentabilidade e posição de preço. Não é recomendação de investimento.
+            {t('sig.verdictSub')}
           </p>
         </div>
       </div>
@@ -518,60 +527,60 @@ function FundamentalsContent({ data }: { data: FundamentalsResult }) {
       {!isEtf && (
         <div className="grid md:grid-cols-2 gap-4">
           <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Valuation</h4>
-            <MetricRow label="P/L (trailing)" value={fmt(data.trailingPE, { dec: 1 })} signal={peSignal(data.trailingPE, data.market)}
-              tooltip="Preço / Lucro. Abaixo da média histórica = barato." />
-            <MetricRow label="P/L (forward)" value={fmt(data.forwardPE, { dec: 1 })} signal={peSignal(data.forwardPE, data.market)}
-              tooltip="P/L estimado com lucros futuros projetados pelos analistas." />
-            <MetricRow label="P/VP" value={fmt(data.priceToBook, { dec: 2 })} signal={pbSignal(data.priceToBook)}
-              tooltip="Preço / Valor Patrimonial. Abaixo de 1 = abaixo do patrimônio." />
-            <MetricRow label="EV/EBITDA" value={fmt(data.enterpriseToEbitda, { dec: 1 })} signal={evEbitdaSignal(data.enterpriseToEbitda, data.market)}
-              tooltip="Valor da empresa relativo ao EBITDA." />
-            <MetricRow label="P/S" value={fmt(data.priceToSales, { dec: 2 })}
-              tooltip="Preço / Receita. Útil para empresas sem lucro ainda." />
-            <MetricRow label="PEG" value={fmt(data.pegRatio, { dec: 2 })}
-              tooltip="P/L dividido pelo crescimento de lucros. Abaixo de 1 = barato em relação ao crescimento." />
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('fund.valuation')}</h4>
+            <MetricRow label="P/E (trailing)" value={fmt(data.trailingPE, { dec: 1 }, numLocale)} signal={peSignal(data.trailingPE, data.market)}
+              tooltip="Price / Earnings. Below historical average = cheap." />
+            <MetricRow label="P/E (forward)" value={fmt(data.forwardPE, { dec: 1 }, numLocale)} signal={peSignal(data.forwardPE, data.market)}
+              tooltip="Forward P/E using analyst projected earnings." />
+            <MetricRow label="P/B" value={fmt(data.priceToBook, { dec: 2 }, numLocale)} signal={pbSignal(data.priceToBook)}
+              tooltip="Price / Book Value. Below 1 = below book value." />
+            <MetricRow label="EV/EBITDA" value={fmt(data.enterpriseToEbitda, { dec: 1 }, numLocale)} signal={evEbitdaSignal(data.enterpriseToEbitda, data.market)}
+              tooltip="Enterprise value relative to EBITDA." />
+            <MetricRow label="P/S" value={fmt(data.priceToSales, { dec: 2 }, numLocale)}
+              tooltip="Price / Revenue. Useful for companies without profit yet." />
+            <MetricRow label="PEG" value={fmt(data.pegRatio, { dec: 2 }, numLocale)}
+              tooltip="P/E divided by earnings growth. Below 1 = cheap relative to growth." />
           </div>
 
           <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Dividendos & Rentabilidade</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('fund.dividends')}</h4>
             <MetricRow label="Dividend Yield" value={fmtDy(data.dividendYield)} signal={dySignal(data.dividendYield)}
-              tooltip="Dividendo / preço. Acima de 5% geralmente atrativo." />
-            <MetricRow label="Payout Ratio" value={fmt(data.payoutRatio, { mult100: true, pct: true })}
-              tooltip="% do lucro distribuído como dividendo." />
-            <MetricRow label="ROE" value={fmt(data.returnOnEquity, { mult100: true, pct: true })} signal={roeSignal(data.returnOnEquity)}
-              tooltip="Retorno sobre patrimônio. Acima de 15% = boa gestão." />
-            <MetricRow label="ROA" value={fmt(data.returnOnAssets, { mult100: true, pct: true })}
-              tooltip="Retorno sobre ativos totais." />
-            <MetricRow label="Margem líquida" value={fmt(data.profitMargins, { mult100: true, pct: true })}
-              tooltip="Lucro líquido / Receita." />
-            <MetricRow label="Margem EBITDA" value={fmt(data.ebitdaMargins, { mult100: true, pct: true })}
-              tooltip="EBITDA / Receita." />
+              tooltip="Dividend / price. Above 5% generally attractive." />
+            <MetricRow label="Payout Ratio" value={fmt(data.payoutRatio, { mult100: true, pct: true }, numLocale)}
+              tooltip="% of profit distributed as dividend." />
+            <MetricRow label="ROE" value={fmt(data.returnOnEquity, { mult100: true, pct: true }, numLocale)} signal={roeSignal(data.returnOnEquity)}
+              tooltip="Return on equity. Above 15% = good management." />
+            <MetricRow label="ROA" value={fmt(data.returnOnAssets, { mult100: true, pct: true }, numLocale)}
+              tooltip="Return on total assets." />
+            <MetricRow label="Net margin" value={fmt(data.profitMargins, { mult100: true, pct: true }, numLocale)}
+              tooltip="Net profit / Revenue." />
+            <MetricRow label="EBITDA margin" value={fmt(data.ebitdaMargins, { mult100: true, pct: true }, numLocale)}
+              tooltip="EBITDA / Revenue." />
           </div>
 
           <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Saúde Financeira</h4>
-            <MetricRow label="Dívida / PL" value={fmt(data.debtToEquity, { dec: 1 })} signal={debtSignal(data.debtToEquity)}
-              tooltip="Dívida relativa ao patrimônio. Abaixo de 100% é conservador." />
-            <MetricRow label="Liquidez corrente" value={fmt(data.currentRatio, { dec: 2 })}
-              tooltip="Ativo circulante / Passivo circulante. Acima de 1.5 = saudável." />
-            <MetricRow label="Beta" value={fmt(data.beta, { dec: 2 })}
-              tooltip="Volatilidade relativa ao mercado. Beta > 1 = mais volátil." />
-            <MetricRow label="Méd. 50 dias" value={fmtCurrency(data.fiftyDayAverage, data.currency)}
-              tooltip="Média móvel de 50 dias." />
-            <MetricRow label="Méd. 200 dias" value={fmtCurrency(data.twoHundredDayAverage, data.currency)}
-              tooltip="Média móvel de 200 dias. Preço acima = tendência de alta." />
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('fund.health')}</h4>
+            <MetricRow label="Debt/Equity" value={fmt(data.debtToEquity, { dec: 1 }, numLocale)} signal={debtSignal(data.debtToEquity)}
+              tooltip="Debt relative to equity. Below 100% is conservative." />
+            <MetricRow label="Current ratio" value={fmt(data.currentRatio, { dec: 2 }, numLocale)}
+              tooltip="Current assets / current liabilities. Above 1.5 = healthy." />
+            <MetricRow label="Beta" value={fmt(data.beta, { dec: 2 }, numLocale)}
+              tooltip="Volatility relative to market. Beta > 1 = more volatile." />
+            <MetricRow label="50-day avg" value={fmtCurrency(data.fiftyDayAverage, data.currency, numLocale)}
+              tooltip="50-day moving average." />
+            <MetricRow label="200-day avg" value={fmtCurrency(data.twoHundredDayAverage, data.currency, numLocale)}
+              tooltip="200-day moving average. Price above = uptrend." />
           </div>
 
           <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Crescimento</h4>
-            <MetricRow label="Cresc. Lucros" value={fmt(data.earningsGrowth, { mult100: true, pct: true })}
-              tooltip="Crescimento de lucros recente." />
-            <MetricRow label="Cresc. Receita" value={fmt(data.revenueGrowth, { mult100: true, pct: true })}
-              tooltip="Crescimento de receita recente." />
-            <MetricRow label="Margem bruta" value={fmt(data.grossMargins, { mult100: true, pct: true })}
-              tooltip="(Receita − CPV) / Receita." />
-            <MetricRow label="Market Cap" value={fmtMarketCap(data.marketCap)} />
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('fund.growth')}</h4>
+            <MetricRow label="Earnings growth" value={fmt(data.earningsGrowth, { mult100: true, pct: true }, numLocale)}
+              tooltip="Recent earnings growth." />
+            <MetricRow label="Revenue growth" value={fmt(data.revenueGrowth, { mult100: true, pct: true }, numLocale)}
+              tooltip="Recent revenue growth." />
+            <MetricRow label="Gross margin" value={fmt(data.grossMargins, { mult100: true, pct: true }, numLocale)}
+              tooltip="(Revenue − COGS) / Revenue." />
+            <MetricRow label="Market Cap" value={fmtMarketCap(data.marketCap, numLocale)} />
           </div>
         </div>
       )}
@@ -594,6 +603,8 @@ function TickerRow({
   onRemove: (t: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const { t, locale } = useI18n();
+  const numLocale = locale === 'pt-BR' ? 'pt-BR' : 'en-US';
 
   useEffect(() => {
     if (forceOpen !== undefined) setOpen(forceOpen);
@@ -603,7 +614,7 @@ function TickerRow({
 
   const { signal } = data ? overallSignal(data) : { signal: 'neutral' as Signal };
   const OverallIcon = signal === 'cheap' ? TrendingUp : signal === 'expensive' ? TrendingDown : Minus;
-  const marketLabel = data?.market === 'BR' ? '🇧🇷 B3' : data?.market === 'US' ? '🇺🇸 EUA' : '';
+  const marketLabel = data?.market === 'BR' ? '🇧🇷 B3' : data?.market === 'US' ? '🇺🇸 US' : '';
 
   return (
     <div className={cn(
@@ -632,9 +643,9 @@ function TickerRow({
                 )}
               </div>
               {isLoading ? (
-                <p className="text-sm text-muted-foreground">Carregando…</p>
+                <p className="text-sm text-muted-foreground">{t('att.loading')}</p>
               ) : isError ? (
-                <p className="text-sm text-destructive">{(error as Error)?.message ?? 'Erro'}</p>
+                <p className="text-sm text-destructive">{(error as Error)?.message ?? 'Error'}</p>
               ) : data?.name ? (
                 <p className="text-sm text-muted-foreground truncate">{data.name}</p>
               ) : null}
@@ -646,17 +657,17 @@ function TickerRow({
             {!isLoading && data && (
               <>
                 <div>
-                  <p className="font-bold text-base tabular-nums">{fmtCurrency(data.currentPrice, data.currency)}</p>
+                  <p className="font-bold text-base tabular-nums">{fmtCurrency(data.currentPrice, data.currency, numLocale)}</p>
                   {data.analystTarget?.targetMean && data.currentPrice && (
                     <p className="text-xs text-muted-foreground tabular-nums">
-                      Alvo: {fmtCurrency(data.analystTarget.targetMean, data.currency)}
+                      {t('fv.alvo')} {fmtCurrency(data.analystTarget.targetMean, data.currency, numLocale)}
                     </p>
                   )}
                 </div>
                 {signal !== 'neutral' && (
                   <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold shrink-0', signalBg(signal))}>
                     <OverallIcon className="h-3 w-3" />
-                    {signalLabel(signal)}
+                    {signalLabel(signal, t)}
                   </span>
                 )}
               </>
@@ -675,7 +686,6 @@ function TickerRow({
           type="button"
           onClick={() => onRemove(ticker)}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 hover:bg-muted hover:text-destructive transition-colors"
-          title="Remover"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -687,12 +697,12 @@ function TickerRow({
       )}
       {open && isLoading && (
         <div className="border-t border-border/50 px-4 py-8 flex items-center justify-center gap-2 text-muted-foreground text-sm">
-          <Loader2 className="h-4 w-4 animate-spin" /> Carregando dados…
+          <Loader2 className="h-4 w-4 animate-spin" /> {t('att.loading')}
         </div>
       )}
       {open && isError && (
         <div className="border-t border-border/50 px-4 py-4 text-sm text-destructive">
-          {(error as Error)?.message ?? 'Não foi possível carregar os dados.'}
+          {(error as Error)?.message ?? 'Failed to load data.'}
         </div>
       )}
     </div>
@@ -706,6 +716,7 @@ export function AnalysisTickerTab() {
   const [inputValue, setInputValue] = useState('');
   const [allOpen, setAllOpen] = useState<boolean | undefined>(undefined);
   const [loadingList, setLoadingList] = useState(true);
+  const { t } = useI18n();
 
   // Load from API on mount
   useEffect(() => {
@@ -742,16 +753,16 @@ export function AnalysisTickerTab() {
     <div className="space-y-4">
       {/* Add ticker input */}
       <div className="rounded-xl border border-border/60 bg-card p-5">
-        <h3 className="text-base font-semibold mb-1">Análise de ativos</h3>
+        <h3 className="text-base font-semibold mb-1">{t('att.title')}</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Adicione tickers para acompanhar. BR: <span className="font-mono">PETR4</span>, <span className="font-mono">IVVB11</span> · EUA: <span className="font-mono">AAPL</span>, <span className="font-mono">VOO</span> · Europa: <span className="font-mono">SAP.DE</span>
+          {t('att.subtitle', { br: 'PETR4, IVVB11', us: 'AAPL, VOO', eu: 'SAP.DE' })}
         </p>
         <div className="flex gap-2">
           <input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value.toUpperCase())}
             onKeyDown={handleKeyDown}
-            placeholder="ex: PETR4, AAPL, SAP.DE…"
+            placeholder={t('att.placeholder')}
             className="flex h-10 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm font-mono uppercase shadow-sm placeholder:text-muted-foreground placeholder:normal-case focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             spellCheck={false}
           />
@@ -762,13 +773,13 @@ export function AnalysisTickerTab() {
             className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Plus className="h-4 w-4" />
-            Adicionar
+            {t('att.add')}
           </button>
         </div>
 
         {/* Quick add examples */}
         <div className="mt-3 flex flex-wrap gap-1.5">
-          <span className="text-xs text-muted-foreground">Sugestões:</span>
+          <span className="text-xs text-muted-foreground">{t('att.suggestions')}</span>
           {['PETR4', 'VALE3', 'ITUB4', 'IVVB11', 'BOVA11', 'AAPL', 'MSFT', 'NVDA', 'VOO', 'SAP.DE'].map((t) => (
             <button
               key={t}
@@ -787,8 +798,8 @@ export function AnalysisTickerTab() {
       {!loadingList && tickers.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
           <Search className="h-8 w-8 mb-3 opacity-30" />
-          <p className="text-sm font-medium">Nenhum ativo na lista</p>
-          <p className="text-xs mt-1">Adicione tickers acima para ver a análise</p>
+          <p className="text-sm font-medium">{t('att.emptyTitle')}</p>
+          <p className="text-xs mt-1">{t('att.emptyMsg')}</p>
         </div>
       )}
 
@@ -814,15 +825,17 @@ export function AnalysisTickerTab() {
       {!loadingList && tickers.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">{tickers.length} ativo{tickers.length !== 1 ? 's' : ''} na lista</p>
+            <p className="text-sm text-muted-foreground">
+              {tickers.length === 1 ? t('att.inList', { n: String(tickers.length) }) : t('att.inListPlural', { n: String(tickers.length) })}
+            </p>
             <button
               type="button"
               onClick={() => setAllOpen((prev) => prev === true ? false : true)}
               className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               {allOpen === true
-                ? <><ChevronsDownUp className="h-4 w-4" />Colapsar tudo</>
-                : <><ChevronsUpDown className="h-4 w-4" />Expandir tudo</>
+                ? <><ChevronsDownUp className="h-4 w-4" />{t('att.collapseAll')}</>
+                : <><ChevronsUpDown className="h-4 w-4" />{t('att.expandAll')}</>
               }
             </button>
           </div>
@@ -840,7 +853,7 @@ export function AnalysisTickerTab() {
 
       {!loadingList && tickers.length > 0 && (
         <p className="text-xs text-muted-foreground text-center pb-2">
-          Dados via Yahoo Finance. Não constitui recomendação de investimento.
+          {t('att.disclaimer')}
         </p>
       )}
     </div>

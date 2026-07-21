@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { useCreateAsset } from '@/hooks/use-assets';
 import { useCategories } from '@/hooks/use-categories';
+import { useI18n } from '@/lib/i18n/i18n-context';
 import { PlusCircle, Loader2 } from 'lucide-react';
 
 const createAssetSchema = z.object({
@@ -44,6 +45,7 @@ export function AddAssetDialog({ categoryId: defaultCategoryId }: { categoryId?:
   const [open, setOpen] = useState(false);
   const { data: categories, isLoading: loadingCategories } = useCategories();
   const { mutate: createAsset, isPending } = useCreateAsset();
+  const { t } = useI18n();
 
   const {
     register,
@@ -92,26 +94,26 @@ export function AddAssetDialog({ categoryId: defaultCategoryId }: { categoryId?:
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Add Asset
+          {t('aa.trigger')}
         </Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Asset</DialogTitle>
+          <DialogTitle>{t('aa.title')}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Category */}
           <div className="space-y-1.5">
-            <Label htmlFor="categoryId">Category *</Label>
+            <Label htmlFor="categoryId">{t('aa.category')}</Label>
             <Select
               value={categoryId}
               onValueChange={(val) => setValue('categoryId', val, { shouldValidate: true })}
               disabled={loadingCategories}
             >
               <SelectTrigger id="categoryId">
-                <SelectValue placeholder="Select category..." />
+                <SelectValue placeholder={t('aa.selectCategory')} />
               </SelectTrigger>
               <SelectContent>
                 {categories?.map((cat) => (
@@ -128,7 +130,7 @@ export function AddAssetDialog({ categoryId: defaultCategoryId }: { categoryId?:
 
           {/* Name */}
           <div className="space-y-1.5">
-            <Label htmlFor="name">Asset Name *</Label>
+            <Label htmlFor="name">{t('aa.name')}</Label>
             <Input
               id="name"
               placeholder="e.g. Tesouro IPCA+ 2035"
@@ -141,7 +143,7 @@ export function AddAssetDialog({ categoryId: defaultCategoryId }: { categoryId?:
 
           {/* Ticker */}
           <div className="space-y-1.5">
-            <Label htmlFor="ticker">Ticker (optional)</Label>
+            <Label htmlFor="ticker">{t('aa.ticker')}</Label>
             <Input
               id="ticker"
               placeholder="e.g. ITUB3, AAPL"
@@ -152,7 +154,7 @@ export function AddAssetDialog({ categoryId: defaultCategoryId }: { categoryId?:
           {/* Quantity and Unit Price */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="quantity">Quantity *</Label>
+              <Label htmlFor="quantity">{t('aa.quantity')}</Label>
               <Input
                 id="quantity"
                 type="number"
@@ -167,7 +169,7 @@ export function AddAssetDialog({ categoryId: defaultCategoryId }: { categoryId?:
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="unitPrice">Unit Price *</Label>
+              <Label htmlFor="unitPrice">{t('aa.unitPrice')}</Label>
               <Input
                 id="unitPrice"
                 type="number"
@@ -184,7 +186,7 @@ export function AddAssetDialog({ categoryId: defaultCategoryId }: { categoryId?:
 
           {/* Currency */}
           <div className="space-y-1.5">
-            <Label>Currency *</Label>
+            <Label>{t('aa.currency')}</Label>
             <Select
               value={currency}
               onValueChange={(val) =>
@@ -195,16 +197,16 @@ export function AddAssetDialog({ categoryId: defaultCategoryId }: { categoryId?:
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="BRL">BRL - Brazilian Real</SelectItem>
-                <SelectItem value="USD">USD - US Dollar</SelectItem>
-                <SelectItem value="EUR">EUR - Euro</SelectItem>
+                <SelectItem value="BRL">{t('aa.currencyBRL')}</SelectItem>
+                <SelectItem value="USD">{t('aa.currencyUSD')}</SelectItem>
+                <SelectItem value="EUR">{t('aa.currencyEUR')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Broker */}
           <div className="space-y-1.5">
-            <Label htmlFor="broker">Broker (optional)</Label>
+            <Label htmlFor="broker">{t('aa.broker')}</Label>
             <Input
               id="broker"
               placeholder="e.g. XP Investimentos"
@@ -214,7 +216,7 @@ export function AddAssetDialog({ categoryId: defaultCategoryId }: { categoryId?:
 
           {/* Notes */}
           <div className="space-y-1.5">
-            <Label htmlFor="notes">Notes (optional)</Label>
+            <Label htmlFor="notes">{t('aa.notes')}</Label>
             <Textarea
               id="notes"
               placeholder="Any additional notes..."
@@ -225,11 +227,11 @@ export function AddAssetDialog({ categoryId: defaultCategoryId }: { categoryId?:
 
           <DialogFooter className="pt-2">
             <Button type="button" variant="outline" onClick={handleClose}>
-              Cancel
+              {t('aa.cancel')}
             </Button>
             <Button type="submit" disabled={isPending}>
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Asset
+              {t('aa.create')}
             </Button>
           </DialogFooter>
         </form>

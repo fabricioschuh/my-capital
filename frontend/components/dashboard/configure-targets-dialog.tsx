@@ -12,6 +12,7 @@ import {
 import { useCategories, useUpdateCategory } from '@/hooks/use-categories';
 import { SlidersHorizontal, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useI18n } from '@/lib/i18n/i18n-context';
 
 interface CategoryTarget {
   id: string;
@@ -23,6 +24,7 @@ export function ConfigureTargetsDialog() {
   const [open, setOpen] = useState(false);
   const { data: categories } = useCategories();
   const { mutate: updateCategory } = useUpdateCategory();
+  const { t } = useI18n();
 
   const [targets, setTargets] = useState<CategoryTarget[]>([]);
   const [saving, setSaving] = useState(false);
@@ -69,7 +71,7 @@ export function ConfigureTargetsDialog() {
       );
     }
     setSaving(false);
-    toast.success(`${done} ${done === 1 ? 'categoria atualizada' : 'categorias atualizadas'}`);
+    toast.success(done === 1 ? t('ct.toastSingle', { n: String(done) }) : t('ct.toastMultiple', { n: String(done) }));
     setOpen(false);
   };
 
@@ -79,13 +81,13 @@ export function ConfigureTargetsDialog() {
     <>
       <Button variant="outline" size="sm" onClick={() => setOpen(true)} className="gap-2">
         <SlidersHorizontal className="h-4 w-4" />
-        Configurar porcentagem ideal
+        {t('ct.button')}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Porcentagem ideal por categoria</DialogTitle>
+            <DialogTitle>{t('ct.title')}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-2 py-1 max-h-[60vh] overflow-y-auto pr-1">
@@ -116,12 +118,12 @@ export function ConfigureTargetsDialog() {
           <div className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium
             ${Math.abs(diff) < 1 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
               : 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'}`}>
-            <span>Total alocado</span>
+            <span>{t('ct.total')}</span>
             <span className="tabular-nums">
-              {total.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}%
+              {total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}%
               {Math.abs(diff) >= 1 && (
                 <span className="ml-1 font-normal opacity-70">
-                  ({diff > 0 ? '+' : ''}{diff.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}%)
+                  ({diff > 0 ? '+' : ''}{diff.toLocaleString(undefined, { minimumFractionDigits: 0 })}%)
                 </span>
               )}
             </span>
@@ -129,11 +131,11 @@ export function ConfigureTargetsDialog() {
 
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
-              Cancelar
+              {t('ct.cancel')}
             </Button>
             <Button size="sm" onClick={handleSave} disabled={saving || !isValid}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salvar
+              {t('ct.save')}
             </Button>
           </DialogFooter>
         </DialogContent>

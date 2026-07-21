@@ -6,10 +6,12 @@ import { useTheme } from 'next-themes';
 import { Moon, Sun, TrendingUp, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authService } from '@/services/auth.service';
+import { useI18n } from '@/lib/i18n/i18n-context';
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
+  const { locale, setLocale, t } = useI18n();
 
   const handleLogout = async () => {
     await authService.logout();
@@ -30,7 +32,7 @@ export function Navbar() {
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Toggle theme"
+            aria-label={t('nav.toggleTheme')}
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           >
             <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
@@ -39,10 +41,20 @@ export function Navbar() {
 
           <Button
             variant="ghost"
+            size="sm"
+            aria-label={t('nav.lang')}
+            onClick={() => setLocale(locale === 'en' ? 'pt-BR' : 'en')}
+            className="w-10 font-semibold text-xs"
+          >
+            {locale === 'en' ? 'PT' : 'EN'}
+          </Button>
+
+          <Button
+            variant="ghost"
             size="icon"
-            aria-label="Sair"
+            aria-label={t('nav.logout')}
             onClick={handleLogout}
-            title="Sair"
+            title={t('nav.logout')}
           >
             <LogOut className="h-5 w-5" />
           </Button>

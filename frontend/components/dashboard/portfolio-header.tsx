@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useRefreshExchangeRates } from '@/hooks/use-portfolio';
 import { useRefreshPrices } from '@/hooks/use-assets';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n/i18n-context';
 
 interface PortfolioHeaderProps {
   summary: PortfolioSummary;
@@ -15,6 +16,7 @@ interface PortfolioHeaderProps {
 export function PortfolioHeader({ summary }: PortfolioHeaderProps) {
   const { mutate: refreshRates, isPending: refreshingRates } = useRefreshExchangeRates();
   const { mutate: refreshPrices, isPending: refreshingPrices } = useRefreshPrices();
+  const { locale, t } = useI18n();
 
   const isPending = refreshingRates || refreshingPrices;
 
@@ -22,18 +24,20 @@ export function PortfolioHeader({ summary }: PortfolioHeaderProps) {
   const hasUSD = cb?.totalUSD > 0;
   const hasEUR = cb?.totalEUR > 0;
 
+  const dateLocale = locale === 'pt-BR' ? 'pt-BR' : 'en-US';
+
   return (
     <div className="mb-8 space-y-4">
       {/* Total value hero */}
       <div>
         <p className="text-sm text-muted-foreground font-medium uppercase tracking-wide">
-          Total Portfolio
+          {t('ph.total')}
         </p>
         <h2 className="mt-1 text-4xl font-bold tracking-tight text-foreground">
           {formatCurrency(summary.totalValue)}
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Calculado em {new Date(summary.calculatedAt).toLocaleString('pt-BR')}
+          {t('ph.calculatedAt', { date: new Date(summary.calculatedAt).toLocaleString(dateLocale) })}
         </p>
       </div>
 
@@ -78,7 +82,7 @@ export function PortfolioHeader({ summary }: PortfolioHeaderProps) {
           <span className="font-bold">{formatCurrency(summary.exchangeRates.EUR)}</span>
         </div>
         <div className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
-          Atualizado: {new Date(summary.exchangeRates.updatedAt).toLocaleTimeString('pt-BR')}
+          {t('ph.updatedAt')} {new Date(summary.exchangeRates.updatedAt).toLocaleTimeString(dateLocale)}
         </div>
         <Button
           variant="outline"
@@ -87,7 +91,7 @@ export function PortfolioHeader({ summary }: PortfolioHeaderProps) {
           disabled={isPending}
         >
           <TrendingUp className={cn('mr-2 h-4 w-4', refreshingPrices && 'animate-pulse')} />
-          Atualizar preços
+          {t('ph.refreshPrices')}
         </Button>
         <Button
           variant="ghost"
@@ -97,7 +101,7 @@ export function PortfolioHeader({ summary }: PortfolioHeaderProps) {
           className="text-muted-foreground"
         >
           <RefreshCw className={cn('mr-2 h-4 w-4', refreshingRates && 'animate-spin')} />
-          Atualizar câmbio
+          {t('ph.refreshRates')}
         </Button>
       </div>
     </div>

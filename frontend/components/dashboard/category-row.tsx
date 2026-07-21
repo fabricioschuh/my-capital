@@ -21,6 +21,7 @@ import { useAssets } from '@/hooks/use-assets';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useI18n } from '@/lib/i18n/i18n-context';
 
 interface CategoryRowProps {
   category: CategorySummary;
@@ -46,12 +47,15 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 function AssetRow({ asset }: {
   asset: { id: string; name: string; ticker?: string; quantity: number; unitPrice: number; marketPrice?: number; marketPriceUpdatedAt?: string; currency: string }
 }) {
+  const { t, locale } = useI18n();
   const effectivePrice = asset.marketPrice ?? asset.unitPrice;
   const total = asset.quantity * effectivePrice;
   const hasMarketPrice = asset.marketPrice != null;
   const priceChange = hasMarketPrice
     ? ((asset.marketPrice! - asset.unitPrice) / asset.unitPrice) * 100
     : null;
+
+  const numLocale = locale === 'pt-BR' ? 'pt-BR' : 'en-US';
 
   return (
     <div className="flex items-center justify-between py-3 px-4 hover:bg-muted/40 rounded-lg transition-colors">
@@ -70,14 +74,14 @@ function AssetRow({ asset }: {
       </div>
       <div className="flex items-center gap-8 shrink-0 ml-6 text-right">
         <div className="hidden sm:block">
-          <p className="text-xs text-muted-foreground mb-0.5">Quantidade</p>
+          <p className="text-xs text-muted-foreground mb-0.5">{t('cr.quantity')}</p>
           <p className="text-sm font-medium tabular-nums">
-            {asset.quantity.toLocaleString('pt-BR', { maximumFractionDigits: 8 })}
+            {asset.quantity.toLocaleString(numLocale, { maximumFractionDigits: 8 })}
           </p>
         </div>
         <div className="hidden sm:block">
           <p className="text-xs text-muted-foreground mb-0.5">
-            {hasMarketPrice ? 'Cotação atual' : 'Preço médio'}
+            {hasMarketPrice ? t('cr.currentPrice') : t('cr.avgPrice')}
           </p>
           <p className="text-sm font-medium tabular-nums">
             {formatCurrency(effectivePrice, asset.currency)}
@@ -89,7 +93,7 @@ function AssetRow({ asset }: {
           )}
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Total</p>
+          <p className="text-xs text-muted-foreground mb-0.5">{t('cr.total')}</p>
           <p className="text-base font-bold tabular-nums">{formatCurrency(total, asset.currency)}</p>
         </div>
       </div>
@@ -100,6 +104,7 @@ function AssetRow({ asset }: {
 export function CategoryRow({ category, isDragging = false, forceOpen }: CategoryRowProps) {
   const [open, setOpen] = useState(false);
   const [transactionOpen, setTransactionOpen] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (forceOpen !== undefined) setOpen(forceOpen);
@@ -131,7 +136,7 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
           isSorting && 'z-10',
         )}
       >
-        {/* Accent bar — always primary color */}
+        {/* Accent bar */}
         <div className="h-0.5 bg-primary/30" />
 
         {/* Header row */}
@@ -161,27 +166,27 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
               <div className="min-w-0">
                 <p className="font-semibold text-xl leading-tight truncate">{category.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  {category.assets} {category.assets === 1 ? 'ativo' : 'ativos'}
+                  {category.assets} {category.assets === 1 ? t('cr.asset') : t('cr.assets')}
                 </p>
               </div>
             </div>
 
-            {/* Allocation columns — always rendered, zero-state when no assets */}
+            {/* Allocation columns */}
             <div className="hidden md:flex items-center gap-8 shrink-0 text-sm">
               <div className="text-right">
-                <p className="text-xs text-muted-foreground mb-0.5">Atual</p>
+                <p className="text-xs text-muted-foreground mb-0.5">{t('cr.current')}</p>
                 <p className="font-medium tabular-nums">
                   {hasAssets ? formatPercentage(category.currentPercentage) : '—'}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-muted-foreground mb-0.5">Meta</p>
+                <p className="text-xs text-muted-foreground mb-0.5">{t('cr.target')}</p>
                 <p className="font-medium tabular-nums">
                   {formatPercentage(category.targetPercentage)}
                 </p>
               </div>
               <div className="w-16 text-right">
-                <p className="text-xs text-muted-foreground mb-0.5">Dif.</p>
+                <p className="text-xs text-muted-foreground mb-0.5">{t('cr.diff')}</p>
                 <p className={cn('font-semibold tabular-nums', hasAssets ? getDifferenceColor(difference) : 'text-muted-foreground')}>
                   {hasAssets ? formatDifference(difference) : '—'}
                 </p>
@@ -207,7 +212,7 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
                     {formatDifference(difference)}
                   </span>
                 ) : (
-                  <span className="text-xs text-muted-foreground/50">sem ativos</span>
+                  <span className="text-xs text-muted-foreground/50">{t('cr.noAssets')}</span>
                 )}
               </div>
             </div>
@@ -227,8 +232,8 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
             {/* Mobile allocation info */}
             <div className="md:hidden px-4 pt-3 pb-2 space-y-2">
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Atual {hasAssets ? formatPercentage(category.currentPercentage) : '—'}</span>
-                <span>Meta {formatPercentage(category.targetPercentage)}</span>
+                <span>{t('cr.current')} {hasAssets ? formatPercentage(category.currentPercentage) : '—'}</span>
+                <span>{t('cr.target')} {formatPercentage(category.targetPercentage)}</span>
               </div>
               <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-secondary">
                 <div
@@ -252,7 +257,7 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
               )}
               {!isLoading && assets?.length === 0 && (
                 <p className="py-6 text-center text-sm text-muted-foreground">
-                  Nenhum ativo nesta categoria
+                  {t('cr.empty')}
                 </p>
               )}
               {assets?.map((asset) => (
@@ -269,7 +274,7 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
                 onClick={() => setTransactionOpen(true)}
               >
                 <Plus className="h-3.5 w-3.5" />
-                Adicionar ativo
+                {t('cr.addAsset')}
               </Button>
             </div>
           </div>
