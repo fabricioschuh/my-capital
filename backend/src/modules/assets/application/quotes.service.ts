@@ -87,13 +87,16 @@ export class QuotesService {
     const intlQuotes = new Map<string, number | null>();
     for (let i = 0; i < intlAssets.length; i += 3) {
       const batch = intlAssets.slice(i, i + 3);
-      const results = await Promise.all(
+      const results = await Promise.allSettled(
         batch.map(async (a) => ({
           ticker: a.ticker!.toUpperCase(),
           price: await this.fetchIntlQuote(a.ticker!),
         })),
       );
-      for (const r of results) intlQuotes.set(r.ticker, r.price);
+      for (const r of results) {
+        if (r.status === 'fulfilled') intlQuotes.set(r.value.ticker, r.value.price);
+        else this.logger.warn(`Intl quote fetch failed: ${r.reason}`);
+      }
     }
 
     let updated = 0;

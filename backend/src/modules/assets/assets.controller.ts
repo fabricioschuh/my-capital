@@ -10,6 +10,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { AssetsService } from './application/assets.service';
@@ -38,7 +39,7 @@ export class AssetsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get asset by ID' })
-  async findById(@Param('id') id: string): Promise<AssetResponseDto> {
+  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<AssetResponseDto> {
     return this.assetsService.findById(id);
   }
 
@@ -57,7 +58,7 @@ export class AssetsController {
   @Put(':id')
   @ApiOperation({ summary: 'Update an asset' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateAssetDto,
   ): Promise<AssetResponseDto> {
     return this.assetsService.update(id, dto);
@@ -66,14 +67,14 @@ export class AssetsController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an asset' })
-  async delete(@Param('id') id: string): Promise<void> {
+  async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.assetsService.delete(id);
   }
 
   @Patch(':id/transactions')
   @ApiOperation({ summary: 'Record a buy or sell transaction — updates quantity and weighted average price' })
   async transact(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: TransactionDto,
   ): Promise<AssetResponseDto> {
     return this.assetsService.transact(id, dto);

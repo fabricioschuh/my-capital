@@ -1,10 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -28,14 +30,12 @@ export class AuthService {
     } else {
       // Legacy plain-text fallback (still works, but logs a warning)
       passwordMatch = password === legacyPassword;
-      console.warn(
-        '[Auth] Using plain-text AUTH_PASSWORD. Run the hash script and switch to AUTH_PASSWORD_HASH.',
-      );
+      this.logger.warn('[Auth] Using plain-text AUTH_PASSWORD — switch to AUTH_PASSWORD_HASH.');
     }
 
     // Always do both checks before throwing to prevent timing attacks
     if (!usernameMatch || !passwordMatch) {
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const payload = { sub: username, iat: Math.floor(Date.now() / 1000) };
