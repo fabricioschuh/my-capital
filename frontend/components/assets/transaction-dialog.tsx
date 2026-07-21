@@ -81,6 +81,7 @@ import {
 } from '@/components/ui/select';
 import { useAssets, useTransactAsset, useCreateAsset } from '@/hooks/use-assets';
 import { useI18n } from '@/lib/i18n/i18n-context';
+import { en } from '@/lib/i18n/translations/en';
 import { Loader2, PackagePlus, ArrowLeftRight, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -260,13 +261,13 @@ type TickerMode = 'required' | 'optional' | 'hidden';
 type CurrencyMode = 'BRL' | 'USD' | 'EUR' | 'free';
 
 interface CategoryConfig {
-  nameLabelKey: string;
+  nameLabelKey: keyof typeof en;
   namePlaceholder: string;
   tickerMode: TickerMode;
-  tickerLabelKey?: string;
+  tickerLabelKey?: keyof typeof en;
   tickerPlaceholder?: string;
   currency: CurrencyMode;
-  brokerLabelKey: string;
+  brokerLabelKey: keyof typeof en;
   brokerPlaceholder: string;
   showMaturity: boolean;
   showMaturityCheckbox: boolean;
