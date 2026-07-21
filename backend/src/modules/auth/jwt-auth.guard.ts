@@ -18,8 +18,26 @@ export class JwtAuthGuard implements CanActivate {
     private readonly reflector: Reflector,
   ) {}
 
-  async canActivate(_context: ExecutionContext): Promise<boolean> {
-    // Auth temporarily disabled
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) return true;
+
+    const request = context.switchToHttp().getRequest<Request>();
+    const token = this.extractToken(request);
+    if (!token) throw new UnauthorizedException('Token not found');
+
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.get<string>('app.jwtSecret'),
+      });
+      (request as any)['user'] = payload;
+    } catch {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+
     return true;
   }
 
