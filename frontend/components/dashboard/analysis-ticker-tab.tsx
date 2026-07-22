@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n/i18n-context';
+import type { en } from '@/lib/i18n/translations/en';
 
 /* ─── Valuation signal helpers ─────────────────────────────────────────────── */
 
@@ -22,7 +23,7 @@ function signalBg(s: Signal) {
   return 'bg-muted text-muted-foreground';
 }
 
-function signalLabel(s: Signal, t: (key: string) => string) {
+function signalLabel(s: Signal, t: (key: keyof typeof en) => string) {
   if (s === 'cheap') return t('sig.cheap');
   if (s === 'expensive') return t('sig.expensive');
   if (s === 'fair') return t('sig.fair');
@@ -149,7 +150,7 @@ function fmtDy(v: number | undefined): string {
   return `${pct.toFixed(2)}%`;
 }
 
-function recommendationBadge(key: string | undefined, t: (key: string) => string) {
+function recommendationBadge(key: string | undefined, t: (key: keyof typeof en) => string) {
   if (!key) return null;
   const map: Record<string, { label: string; cls: string }> = {
     strongBuy: { label: t('rec.strongBuy'), cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
@@ -172,6 +173,7 @@ function recommendationBadge(key: string | undefined, t: (key: string) => string
 function MetricRow({ label, value, signal, tooltip }: {
   label: string; value: string; signal?: Signal; tooltip?: string;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-0">
       <div className="flex items-center gap-1.5">
@@ -189,7 +191,7 @@ function MetricRow({ label, value, signal, tooltip }: {
         <span className="text-sm font-semibold tabular-nums">{value}</span>
         {signal && signal !== 'neutral' && (
           <span className={cn('text-xs px-1.5 py-0.5 rounded-full font-medium', signalBg(signal))}>
-            {signalLabel(signal)}
+            {signalLabel(signal, t)}
           </span>
         )}
       </div>
