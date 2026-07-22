@@ -274,7 +274,12 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
                   {t('cr.empty')}
                 </p>
               )}
-              {!isLoading && assets && assets.length > 0 && category.slug === 'fixed-income' ? (
+              {!isLoading && assets && assets.length > 0 && category.slug !== 'fixed-income' && (
+                assets.map((asset) => (
+                  <AssetRow key={asset.id} asset={asset} />
+                ))
+              )}
+              {!isLoading && assets && assets.length > 0 && category.slug === 'fixed-income' && (
                 SUBCATEGORY_ORDER.map((sub) => {
                   const grouped = assets.filter((a) => detectFixedIncomeSubcategory(a.name) === sub);
                   if (grouped.length === 0) return null;
@@ -293,10 +298,6 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
                     </div>
                   );
                 })
-              ) : (
-                assets?.map((asset) => (
-                  <AssetRow key={asset.id} asset={asset} />
-                ))
               )}
             </div>
 
