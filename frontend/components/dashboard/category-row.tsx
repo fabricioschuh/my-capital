@@ -44,6 +44,20 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   'brazilian-etfs':             AreaChart,
 };
 
+/* ─── Fixed-income subcategory detection ───────────────────────────────────── */
+
+type FixedIncomeSubcategory = 'CDI' | 'IPCA+' | 'Pré-fixado' | 'Outros';
+
+function detectFixedIncomeSubcategory(name: string): FixedIncomeSubcategory {
+  const n = name.toUpperCase();
+  if (/\bIPCA\b/.test(n)) return 'IPCA+';
+  if (/\bCDI\b/.test(n)) return 'CDI';
+  if (/\bPRE[F]?\b|PREFIXADO|A\.A\.|% A\.A/.test(n)) return 'Pré-fixado';
+  return 'Outros';
+}
+
+const SUBCATEGORY_ORDER: FixedIncomeSubcategory[] = ['CDI', 'IPCA+', 'Pré-fixado', 'Outros'];
+
 function AssetRow({ asset }: {
   asset: { id: string; name: string; ticker?: string; quantity: number; unitPrice: number; marketPrice?: number; marketPriceUpdatedAt?: string; currency: string }
 }) {
@@ -260,9 +274,30 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
                   {t('cr.empty')}
                 </p>
               )}
-              {assets?.map((asset) => (
-                <AssetRow key={asset.id} asset={asset} />
-              ))}
+              {!isLoading && assets && assets.length > 0 && category.slug === 'fixed-income' ? (
+                SUBCATEGORY_ORDER.map((sub) => {
+                  const grouped = assets.filter((a) => detectFixedIncomeSubcategory(a.name) === sub);
+                  if (grouped.length === 0) return null;
+                  return (
+                    <div key={sub} className="mb-3">
+                      <div className="px-1 pb-1.5 pt-2">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          {sub}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        {grouped.map((asset) => (
+                          <AssetRow key={asset.id} asset={asset} />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                assets?.map((asset) => (
+                  <AssetRow key={asset.id} asset={asset} />
+                ))
+              )}
             </div>
 
             {/* Action button */}
