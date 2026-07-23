@@ -11,19 +11,7 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
-// Attach JWT from cookie to every request
-apiClient.interceptors.request.use((config) => {
-  if (typeof document !== 'undefined') {
-    const token = document.cookie
-      .split('; ')
-      .find((row) => row.startsWith('token='))
-      ?.split('=')[1];
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-});
+// Token is sent automatically via httpOnly cookie (withCredentials: true)
 
 apiClient.interceptors.response.use(
   (response) => response,
