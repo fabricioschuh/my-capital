@@ -1,22 +1,20 @@
 import { apiClient } from './api-client';
 
-const TOKEN_KEY = 'auth_token';
-
 export const authService = {
   login: async (username: string, password: string): Promise<void> => {
-    const { data } = await apiClient.post<{ accessToken: string }>('/auth/login', {
-      username,
-      password,
-    });
-    localStorage.setItem(TOKEN_KEY, data.accessToken);
+    await apiClient.post('/auth/login', { username, password });
   },
 
-  logout: (): void => {
-    localStorage.removeItem(TOKEN_KEY);
+  logout: async (): Promise<void> => {
+    await apiClient.post('/auth/logout');
   },
 
-  getToken: (): string | null => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(TOKEN_KEY);
+  isAuthenticated: async (): Promise<boolean> => {
+    try {
+      await apiClient.get('/auth/me');
+      return true;
+    } catch {
+      return false;
+    }
   },
 };

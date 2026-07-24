@@ -13,8 +13,8 @@ export function Navbar() {
   const router = useRouter();
   const { t } = useI18n();
 
-  const handleLogout = () => {
-    authService.logout();
+  const handleLogout = async () => {
+    await authService.logout();
     router.replace('/login');
   };
 
