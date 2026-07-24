@@ -53,28 +53,26 @@ export class AssetsService {
     const existing = await this.assetRepository.findById(id);
     if (!existing) throw new NotFoundError('Asset', id);
 
-    let newQuantity: number;
-    let newUnitPrice: number;
+    // Consolidated model: quantity=1, unitPrice=total value
+    // BUY adds to the total, SELL subtracts from the total
+    const currentTotal = existing.quantity * existing.unitPrice;
+    const delta = dto.quantity * dto.pricePerUnit;
 
+    let newTotal: number;
     if (dto.type === 'BUY') {
-      newQuantity = existing.quantity + dto.quantity;
-      // Weighted average price: preserves cost basis across multiple buys
-      newUnitPrice =
-        (existing.quantity * existing.unitPrice + dto.quantity * dto.pricePerUnit) /
-        newQuantity;
+      newTotal = currentTotal + delta;
     } else {
-      if (dto.quantity > existing.quantity) {
+      if (delta > currentTotal) {
         throw new ValidationError(
-          `Cannot sell ${dto.quantity} units; only ${existing.quantity} available`,
+          `Cannot sell ${delta} — current balance is ${currentTotal}`,
         );
       }
-      newQuantity = existing.quantity - dto.quantity;
-      newUnitPrice = existing.unitPrice; // price unchanged on sell
+      newTotal = currentTotal - delta;
     }
 
     const updated = await this.assetRepository.update(id, {
-      quantity: parseFloat(newQuantity.toFixed(8)),
-      unitPrice: parseFloat(newUnitPrice.toFixed(8)),
+      quantity: 1,
+      unitPrice: parseFloat(newTotal.toFixed(2)),
     });
 
     return this.toResponseDto(updated);

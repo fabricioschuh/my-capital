@@ -446,15 +446,13 @@ function getCategoryConfig(slug: string): CategoryConfig {
 const transactionSchema = z.object({
   assetId: z.string().min(1, 'Selecione um ativo'),
   type: z.enum(['BUY', 'SELL']),
-  quantity: z.coerce.number().positive('Quantidade deve ser maior que zero'),
-  pricePerUnit: z.coerce.number().nonnegative('Preço deve ser maior ou igual a zero'),
+  totalValue: z.coerce.number().positive('Valor deve ser maior que zero'),
 });
 
 const newAssetSchema = z.object({
   name: z.string().min(1, 'Nome obrigatório').max(100),
   ticker: z.string().optional(),
-  quantity: z.coerce.number().positive('Quantidade deve ser maior que zero'),
-  unitPrice: z.coerce.number().positive('Preço deve ser maior que zero'),
+  totalValue: z.coerce.number().positive('Valor deve ser maior que zero'),
   currency: z.enum(['BRL', 'USD', 'EUR']),
   broker: z.string().optional(),
   maturity: z.string().optional(),
@@ -519,37 +517,25 @@ function ExistingAssetForm({
   const { t } = useI18n();
 
   const {
-    register,
     handleSubmit,
     setValue,
     watch,
     formState: { errors },
   } = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
-    defaultValues: { type: 'BUY', assetId: '', quantity: undefined, pricePerUnit: undefined },
+    defaultValues: { type: 'BUY', assetId: '', totalValue: undefined },
   });
 
   const assetId = watch('assetId');
   const type = watch('type');
-  const quantity = watch('quantity');
-  const pricePerUnit = watch('pricePerUnit');
+  const totalValue = watch('totalValue');
   const selectedAsset = assets?.find((a) => a.id === assetId);
-
-  const preview = (() => {
-    if (!selectedAsset || !quantity || !pricePerUnit) return null;
-    if (type === 'BUY') {
-      const newQty = selectedAsset.quantity + quantity;
-      const newPrice =
-        (selectedAsset.quantity * selectedAsset.unitPrice + quantity * pricePerUnit) / newQty;
-      return { qty: newQty, price: newPrice };
-    }
-    if (quantity > selectedAsset.quantity) return null;
-    return { qty: selectedAsset.quantity - quantity, price: selectedAsset.unitPrice };
-  })();
+  const currencySymbol = selectedAsset?.currency === 'USD' ? 'US$' : selectedAsset?.currency === 'EUR' ? '€' : 'R$';
 
   const onSubmit = (data: TransactionFormValues) => {
+    // quantity=1, pricePerUnit=totalValue — backend stores consolidated value
     transact(
-      { id: data.assetId, dto: { type: data.type, quantity: data.quantity, pricePerUnit: data.pricePerUnit } },
+      { id: data.assetId, dto: { type: data.type, quantity: 1, pricePerUnit: data.totalValue } },
       { onSuccess },
     );
   };
@@ -575,7 +561,6 @@ function ExistingAssetForm({
             {assets?.map((a) => (
               <SelectItem key={a.id} value={a.id}>
                 {a.ticker ?? a.name}
-                <span className="ml-2 text-xs text-muted-foreground">({a.quantity} un)</span>
               </SelectItem>
             ))}
           </SelectContent>
@@ -599,30 +584,27 @@ function ExistingAssetForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="qty">{t('td.quantity')}</Label>
-          <Input id="qty" type="number" step="any" min="0" placeholder="0" {...register('quantity')} />
-          {errors.quantity && <p className="text-xs text-destructive">{errors.quantity.message}</p>}
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="price">{t('td.unitPrice')}</Label>
-          <CurrencyInput
-            id="price"
-            value={pricePerUnit}
-            currency={selectedAsset?.currency ?? 'BRL'}
-            onChange={(v) => setValue('pricePerUnit', v, { shouldValidate: true })}
-          />
-          {errors.pricePerUnit && <p className="text-xs text-destructive">{errors.pricePerUnit.message}</p>}
-        </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="totalValue">{t('td.totalValue')}</Label>
+        <CurrencyInput
+          id="totalValue"
+          value={totalValue}
+          currency={selectedAsset?.currency ?? 'BRL'}
+          onChange={(v) => setValue('totalValue', v, { shouldValidate: true })}
+        />
+        {errors.totalValue && <p className="text-xs text-destructive">{errors.totalValue.message}</p>}
       </div>
 
-      {preview && (
-        <div className="rounded-lg bg-muted/50 px-3 py-2 text-sm">
-          <span className="text-muted-foreground">{t('td.newBalance')} </span>
-          <span className="font-semibold">{preview.qty.toLocaleString(undefined, { maximumFractionDigits: 8 })} un</span>
-          <span className="text-muted-foreground"> @ </span>
-          <span className="font-semibold">R$ {preview.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span>
+      {selectedAsset && totalValue > 0 && (
+        <div className="rounded-lg bg-muted/50 px-3 py-2 text-sm flex items-center justify-between">
+          <span className="text-muted-foreground">{t('td.newBalance')}</span>
+          <span className="font-semibold tabular-nums">
+            {currencySymbol} {(
+              type === 'BUY'
+                ? (selectedAsset.quantity * selectedAsset.unitPrice) + totalValue
+                : (selectedAsset.quantity * selectedAsset.unitPrice) - totalValue
+            ).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
         </div>
       )}
 
@@ -702,16 +684,14 @@ function NewAssetForm({
     resolver: zodResolver(newAssetSchema),
     defaultValues: {
       currency: defaultCurrency,
-      quantity: undefined,
-      unitPrice: undefined,
+      totalValue: undefined,
       fiType: undefined,
       fiIndexer: undefined,
     },
   });
 
   const currency = watch('currency');
-  const quantity = watch('quantity');
-  const unitPrice = watch('unitPrice');
+  const totalValue = watch('totalValue');
   const fiType = watch('fiType');
   const fiIndexer = watch('fiIndexer');
   const fiRate = watch('fiRate');
@@ -726,7 +706,6 @@ function NewAssetForm({
     }
   }, [fiType, broker, fiIndexer, fiRate, maturity, config.isFixedIncome, setValue]);
 
-  const subtotal = quantity && unitPrice ? quantity * unitPrice : null;
   const currencySymbol = currency === 'BRL' ? 'R$' : currency === 'USD' ? 'US$' : '€';
 
   const onSubmit = (data: NewAssetFormValues) => {
@@ -735,8 +714,8 @@ function NewAssetForm({
         categoryId,
         name: data.name,
         ticker: data.ticker || undefined,
-        quantity: data.quantity,
-        unitPrice: data.unitPrice,
+        quantity: 1,
+        unitPrice: data.totalValue,
         currency: data.currency,
         broker: data.broker || undefined,
       },
@@ -919,34 +898,17 @@ function NewAssetForm({
         </>
       )}
 
-      {/* ── Quantity + price ── */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="newQty">{config.isFixedIncome ? t('td.invested') : t('td.quantityStar')}</Label>
-          <Input id="newQty" type="number" step="any" min="0" placeholder="0" {...register('quantity')} />
-          {errors.quantity && <p className="text-xs text-destructive">{errors.quantity.message}</p>}
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="newPrice">{t('td.unitPriceStar')}</Label>
-          <CurrencyInput
-            id="newPrice"
-            value={unitPrice}
-            currency={currency}
-            onChange={(v) => setValue('unitPrice', v, { shouldValidate: true })}
-          />
-          {errors.unitPrice && <p className="text-xs text-destructive">{errors.unitPrice.message}</p>}
-        </div>
+      {/* ── Total value ── */}
+      <div className="space-y-1.5">
+        <Label htmlFor="newTotal">{config.isFixedIncome ? t('td.invested') : t('td.totalValue')} *</Label>
+        <CurrencyInput
+          id="newTotal"
+          value={totalValue}
+          currency={currency}
+          onChange={(v) => setValue('totalValue', v, { shouldValidate: true })}
+        />
+        {errors.totalValue && <p className="text-xs text-destructive">{errors.totalValue.message}</p>}
       </div>
-
-      {/* ── Subtotal preview ── */}
-      {subtotal !== null && subtotal > 0 && (
-        <div className="rounded-lg bg-muted/50 px-3 py-2 text-sm flex items-center justify-between">
-          <span className="text-muted-foreground">{t('td.totalInvested')}</span>
-          <span className="font-semibold tabular-nums">
-            {currencySymbol} {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-        </div>
-      )}
 
       {/* ── Currency badge (locked) ── */}
       {config.currency !== 'free' && (

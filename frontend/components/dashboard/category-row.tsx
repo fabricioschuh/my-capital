@@ -59,17 +59,9 @@ function detectFixedIncomeSubcategory(name: string): FixedIncomeSubcategory {
 const SUBCATEGORY_ORDER: FixedIncomeSubcategory[] = ['CDI', 'IPCA+', 'Pré-fixado', 'Outros'];
 
 function AssetRow({ asset }: {
-  asset: { id: string; name: string; ticker?: string; quantity: number; unitPrice: number; marketPrice?: number; marketPriceUpdatedAt?: string; currency: string }
+  asset: { id: string; name: string; ticker?: string; quantity: number; unitPrice: number; marketPrice?: number; currency: string }
 }) {
-  const { t } = useI18n();
-  const effectivePrice = asset.marketPrice ?? asset.unitPrice;
-  const total = asset.quantity * effectivePrice;
-  const hasMarketPrice = asset.marketPrice != null;
-  const priceChange = hasMarketPrice
-    ? ((asset.marketPrice! - asset.unitPrice) / asset.unitPrice) * 100
-    : null;
-
-  const numLocale = 'pt-BR';
+  const total = asset.quantity * (asset.marketPrice ?? asset.unitPrice);
 
   return (
     <div className="flex items-center justify-between py-3 px-4 hover:bg-muted/40 rounded-lg transition-colors">
@@ -86,30 +78,8 @@ function AssetRow({ asset }: {
           )}
         </div>
       </div>
-      <div className="flex items-center gap-8 shrink-0 ml-6 text-right">
-        <div className="hidden sm:block">
-          <p className="text-xs text-muted-foreground mb-0.5">{t('cr.quantity')}</p>
-          <p className="text-sm font-medium tabular-nums">
-            {asset.quantity.toLocaleString(numLocale, { maximumFractionDigits: 8 })}
-          </p>
-        </div>
-        <div className="hidden sm:block">
-          <p className="text-xs text-muted-foreground mb-0.5">
-            {hasMarketPrice ? t('cr.currentPrice') : t('cr.avgPrice')}
-          </p>
-          <p className="text-sm font-medium tabular-nums">
-            {formatCurrency(effectivePrice, asset.currency)}
-          </p>
-          {priceChange !== null && (
-            <p className={cn('text-xs tabular-nums', priceChange >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400')}>
-              {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
-            </p>
-          )}
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground mb-0.5">{t('cr.total')}</p>
-          <p className="text-base font-bold tabular-nums">{formatCurrency(total, asset.currency)}</p>
-        </div>
+      <div className="shrink-0 ml-6 text-right">
+        <p className="text-base font-bold tabular-nums">{formatCurrency(total, asset.currency)}</p>
       </div>
     </div>
   );

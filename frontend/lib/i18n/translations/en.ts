@@ -189,9 +189,8 @@ export const en = {
   'td.indexer': 'Indexer *',
   'td.selectIndexer': 'Select…',
   'td.type_label': 'Type *',
-  'td.invested': 'Amount invested (R$) *',
-  'td.quantityStar': 'Quantity *',
-  'td.unitPriceStar': 'Unit price *',
+  'td.invested': 'Amount invested *',
+  'td.totalValue': 'Total value *',
 
   // Add asset dialog
   'aa.trigger': 'Add Asset',
