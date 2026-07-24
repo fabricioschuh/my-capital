@@ -166,7 +166,7 @@ const BANKS_BR = [
 
 function brokerListForSlug(slug: string): string[] {
   if (slug === 'cryptocurrencies') return [...EXCHANGES_CRYPTO, 'XP Investimentos', 'BTG Pactual', 'Rico', 'Clear', 'Inter', 'Nubank'];
-  if (slug === 'fixed-income') return BANKS_BR;
+  if (slug === 'fixed-income' || slug === 'emergency-reserve' || slug === 'cash') return BANKS_BR;
   if (
     slug === 'international-stocks' ||
     slug === 'international-etfs' ||
@@ -275,30 +275,34 @@ interface CategoryConfig {
   showMaturity: boolean;
   showMaturityCheckbox: boolean;
   isFixedIncome: boolean;
+  /** When true, type/indexer/rate are shown but not required (for emergency-reserve, cash) */
+  fiTypeOptional?: boolean;
 }
 
 const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   'emergency-reserve': {
-    nameLabelKey: 'cc.name',
-    namePlaceholder: 'ex: Reserva Nubank',
+    nameLabelKey: 'cc.description',
+    namePlaceholder: 'ex: CDB Nubank 100% CDI',
     tickerMode: 'hidden',
     currency: 'BRL',
-    brokerLabelKey: 'cc.brokerBR',
-    brokerPlaceholder: 'ex: Nubank',
+    brokerLabelKey: 'cc.issuer',
+    brokerPlaceholder: 'ex: Nubank, Inter',
     showMaturity: true,
     showMaturityCheckbox: true,
-    isFixedIncome: false,
+    isFixedIncome: true,
+    fiTypeOptional: true,
   },
   'cash': {
-    nameLabelKey: 'cc.name',
-    namePlaceholder: 'ex: Conta corrente XP',
+    nameLabelKey: 'cc.description',
+    namePlaceholder: 'ex: CDB XP 102% CDI',
     tickerMode: 'hidden',
     currency: 'BRL',
-    brokerLabelKey: 'cc.brokerBR',
-    brokerPlaceholder: 'ex: XP Investimentos',
+    brokerLabelKey: 'cc.issuer',
+    brokerPlaceholder: 'ex: XP Investimentos, Itaú',
     showMaturity: true,
     showMaturityCheckbox: true,
-    isFixedIncome: false,
+    isFixedIncome: true,
+    fiTypeOptional: true,
   },
   'fixed-income': {
     nameLabelKey: 'cc.description',
@@ -644,13 +648,15 @@ function buildFixedIncomeName(
   fiRate?: number,
   maturity?: string,
 ): string {
-  if (!fiType) return '';
-  const parts: string[] = [fiType];
+  const parts: string[] = [];
+  if (fiType) parts.push(fiType);
   if (broker) parts.push(broker);
   if (fiIndexer && fiRate) {
     if (fiIndexer === 'CDI') parts.push(`${fiRate}% CDI`);
     else if (fiIndexer === 'IPCA') parts.push(`IPCA+ ${fiRate}%`);
     else if (fiIndexer === 'Prefixado') parts.push(`${fiRate}% a.a.`);
+  } else if (fiIndexer) {
+    parts.push(fiIndexer === 'IPCA' ? 'IPCA+' : fiIndexer);
   }
   if (maturity) {
     const [year] = maturity.split('-');
@@ -732,26 +738,29 @@ function NewAssetForm({
       {/* ── Fixed income type selector ── */}
       {config.isFixedIncome && (
         <div className="space-y-1.5">
-          <Label>{t('td.type_label')}</Label>
+          <Label>
+            {t('td.type_label')}
+            {config.fiTypeOptional && <span className="ml-1 font-normal text-muted-foreground">(opcional)</span>}
+          </Label>
           <div className="flex gap-2">
-            {(['CDB', 'LCI', 'LCA'] as const).map((t) => (
+            {(['CDB', 'LCI', 'LCA'] as const).map((tp) => (
               <Button
-                key={t}
+                key={tp}
                 type="button"
-                variant={fiType === t ? 'default' : 'outline'}
+                variant={fiType === tp ? 'default' : 'outline'}
                 size="sm"
                 className="flex-1"
-                onClick={() => setValue('fiType', t)}
+                onClick={() => setValue('fiType', fiType === tp && config.fiTypeOptional ? undefined : tp)}
               >
-                {t}
+                {tp}
               </Button>
             ))}
           </div>
         </div>
       )}
 
-      {/* ── Fixed income indexer ── */}
-      {config.isFixedIncome && fiType && (
+      {/* ── Fixed income indexer + rate ── */}
+      {config.isFixedIncome && (fiType || config.fiTypeOptional) && (
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label>{t('td.indexer')}</Label>
@@ -763,7 +772,7 @@ function NewAssetForm({
               <SelectContent>
                 <SelectItem value="CDI">CDI</SelectItem>
                 <SelectItem value="IPCA">IPCA+</SelectItem>
-                <SelectItem value="Prefixado">Prefixado</SelectItem>
+                <SelectItem value="Prefixado">Pré-fixado</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -783,8 +792,8 @@ function NewAssetForm({
         </div>
       )}
 
-      {/* ── Bank / broker (fixed income: shown early as it feeds name) ── */}
-      {config.isFixedIncome && fiType && (
+      {/* ── Bank / broker ── */}
+      {config.isFixedIncome && (fiType || config.fiTypeOptional) && (
         <div className="space-y-1.5">
           <Label htmlFor="broker-fi">{t(config.brokerLabelKey)}</Label>
           <BrokerInput
@@ -797,18 +806,34 @@ function NewAssetForm({
         </div>
       )}
 
-      {/* ── Maturity (fixed income / pension) ── */}
-      {config.isFixedIncome && fiType && (
+      {/* ── Maturity ── */}
+      {config.isFixedIncome && (fiType || config.fiTypeOptional) && (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor="maturity">{t('td.maturity')}</Label>
+            {config.showMaturityCheckbox && (
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={noMaturity}
+                  onChange={(e) => {
+                    setNoMaturity(e.target.checked);
+                    if (e.target.checked) setValue('maturity', '');
+                  }}
+                  className="h-3.5 w-3.5 rounded border-input accent-primary"
+                />
+                {t('td.noMaturity')}
+              </label>
+            )}
           </div>
-          <Input id="maturity" type="month" disabled={noMaturity} {...register('maturity')} />
+          {!noMaturity && (
+            <Input id="maturity" type="month" {...register('maturity')} />
+          )}
         </div>
       )}
 
-      {/* ── Auto-generated name preview for fixed income ── */}
-      {config.isFixedIncome && fiType && (
+      {/* ── Name (auto-generated for fixed income, or free-text when no type selected) ── */}
+      {config.isFixedIncome && (
         <div className="space-y-1.5">
           <Label htmlFor="name">{t(config.nameLabelKey)} *</Label>
           <Input
@@ -816,7 +841,9 @@ function NewAssetForm({
             placeholder={config.namePlaceholder}
             {...register('name')}
           />
-          <p className="text-xs text-muted-foreground">{t('td.autoGenerated')}</p>
+          {(fiType || fiIndexer) && (
+            <p className="text-xs text-muted-foreground">{t('td.autoGenerated')}</p>
+          )}
           {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
         </div>
       )}
