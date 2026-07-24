@@ -13,8 +13,8 @@ export function Navbar() {
   const router = useRouter();
   const { locale, setLocale, t } = useI18n();
 
-  const handleLogout = async () => {
-    await authService.logout();
+  const handleLogout = () => {
+    authService.logout();
     router.replace('/login');
   };
 
