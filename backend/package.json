@@ -20,7 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node src/shared/scripts/seed.ts",
     "clear-assets": "ts-node src/shared/scripts/clear-assets.ts",
-    "rename-categories-pt": "ts-node src/shared/scripts/rename-categories-pt.ts"
+    "rename-categories-pt": "ts-node src/shared/scripts/rename-categories-pt.ts",
+    "add-missing-categories": "ts-node src/shared/scripts/add-missing-categories.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.0.0",

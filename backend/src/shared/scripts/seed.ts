@@ -43,6 +43,9 @@ const DEFAULT_CATEGORIES = [
   { name: 'Ações Internacionais', slug: 'international-stocks', targetPercentage: 15, order: 7 },
   { name: 'Ações SAP', slug: 'sap-stocks', targetPercentage: 8, order: 8 },
   { name: 'Criptomoedas', slug: 'cryptocurrencies', targetPercentage: 5, order: 9 },
+  { name: 'Fundos Imobiliários', slug: 'real-estate', targetPercentage: 5, order: 10 },
+  { name: 'ETFs Internacionais', slug: 'international-etfs', targetPercentage: 5, order: 11 },
+  { name: 'ETFs Brasileiros', slug: 'brazilian-etfs', targetPercentage: 5, order: 12 },
 ];
 
 async function createTables(): Promise<void> {
