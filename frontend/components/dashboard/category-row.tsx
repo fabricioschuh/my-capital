@@ -61,7 +61,7 @@ const SUBCATEGORY_ORDER: FixedIncomeSubcategory[] = ['CDI', 'IPCA+', 'Pré-fixad
 function AssetRow({ asset }: {
   asset: { id: string; name: string; ticker?: string; quantity: number; unitPrice: number; marketPrice?: number; marketPriceUpdatedAt?: string; currency: string }
 }) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const effectivePrice = asset.marketPrice ?? asset.unitPrice;
   const total = asset.quantity * effectivePrice;
   const hasMarketPrice = asset.marketPrice != null;
@@ -69,7 +69,7 @@ function AssetRow({ asset }: {
     ? ((asset.marketPrice! - asset.unitPrice) / asset.unitPrice) * 100
     : null;
 
-  const numLocale = locale === 'pt-BR' ? 'pt-BR' : 'en-US';
+  const numLocale = 'pt-BR';
 
   return (
     <div className="flex items-center justify-between py-3 px-4 hover:bg-muted/40 rounded-lg transition-colors">

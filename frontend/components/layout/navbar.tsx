@@ -11,7 +11,7 @@ import { useI18n } from '@/lib/i18n/i18n-context';
 export function Navbar() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
-  const { locale, setLocale, t } = useI18n();
+  const { t } = useI18n();
 
   const handleLogout = () => {
     authService.logout();
@@ -37,16 +37,6 @@ export function Navbar() {
           >
             <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            aria-label={t('nav.lang')}
-            onClick={() => setLocale(locale === 'en' ? 'pt-BR' : 'en')}
-            className="w-10 font-semibold text-xs"
-          >
-            {locale === 'en' ? 'PT' : 'EN'}
           </Button>
 
           <Button

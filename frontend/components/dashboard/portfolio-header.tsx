@@ -16,7 +16,7 @@ interface PortfolioHeaderProps {
 export function PortfolioHeader({ summary }: PortfolioHeaderProps) {
   const { mutate: refreshRates, isPending: refreshingRates } = useRefreshExchangeRates();
   const { mutate: refreshPrices, isPending: refreshingPrices } = useRefreshPrices();
-  const { locale, t } = useI18n();
+  const { t } = useI18n();
 
   const isPending = refreshingRates || refreshingPrices;
 
@@ -24,7 +24,7 @@ export function PortfolioHeader({ summary }: PortfolioHeaderProps) {
   const hasUSD = cb?.totalUSD > 0;
   const hasEUR = cb?.totalEUR > 0;
 
-  const dateLocale = locale === 'pt-BR' ? 'pt-BR' : 'en-US';
+  const dateLocale = 'pt-BR';
 
   return (
     <div className="mb-8 space-y-4">

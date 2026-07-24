@@ -34,15 +34,15 @@ const CATEGORIES_TABLE = 'my-capital-categories';
 const ASSETS_TABLE = 'my-capital-assets';
 
 const DEFAULT_CATEGORIES = [
-  { name: 'Emergency Reserve', slug: 'emergency-reserve', targetPercentage: 10, order: 1 },
-  { name: 'Cash', slug: 'cash', targetPercentage: 2, order: 2 },
-  { name: 'Fixed Income', slug: 'fixed-income', targetPercentage: 25, order: 3 },
-  { name: 'Fixed Income International', slug: 'fixed-income-international', targetPercentage: 5, order: 4 },
-  { name: 'Private Pension', slug: 'private-pension', targetPercentage: 10, order: 5 },
-  { name: 'Brazilian Stocks', slug: 'brazilian-stocks', targetPercentage: 20, order: 6 },
-  { name: 'International Stocks', slug: 'international-stocks', targetPercentage: 15, order: 7 },
-  { name: 'SAP Stocks', slug: 'sap-stocks', targetPercentage: 8, order: 8 },
-  { name: 'Cryptocurrencies', slug: 'cryptocurrencies', targetPercentage: 5, order: 9 },
+  { name: 'Reserva de Emergência', slug: 'emergency-reserve', targetPercentage: 10, order: 1 },
+  { name: 'Caixa', slug: 'cash', targetPercentage: 2, order: 2 },
+  { name: 'Renda Fixa Nacional', slug: 'fixed-income', targetPercentage: 25, order: 3 },
+  { name: 'Renda Fixa Internacional', slug: 'fixed-income-international', targetPercentage: 5, order: 4 },
+  { name: 'Previdência Privada', slug: 'private-pension', targetPercentage: 10, order: 5 },
+  { name: 'Ações Nacionais', slug: 'brazilian-stocks', targetPercentage: 20, order: 6 },
+  { name: 'Ações Internacionais', slug: 'international-stocks', targetPercentage: 15, order: 7 },
+  { name: 'Ações SAP', slug: 'sap-stocks', targetPercentage: 8, order: 8 },
+  { name: 'Criptomoedas', slug: 'cryptocurrencies', targetPercentage: 5, order: 9 },
 ];
 
 async function createTables(): Promise<void> {

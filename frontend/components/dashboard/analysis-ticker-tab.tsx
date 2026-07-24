@@ -204,8 +204,8 @@ function MetricRow({ label, value, signal, tooltip }: {
 function RangeBar({ current, low, high, currency }: {
   current?: number; low?: number; high?: number; currency: string;
 }) {
-  const { t, locale } = useI18n();
-  const numLocale = locale === 'pt-BR' ? 'pt-BR' : 'en-US';
+  const { t } = useI18n();
+  const numLocale = 'pt-BR';
   if (!current || !low || !high || high === low) return null;
   const pct = Math.min(Math.max(((current - low) / (high - low)) * 100, 0), 100);
   return (
@@ -228,8 +228,8 @@ function RangeBar({ current, low, high, currency }: {
 /* ─── ETF panel ─────────────────────────────────────────────────────────────── */
 
 function EtfPanel({ etf, currency }: { etf: EtfData; currency: string }) {
-  const { t, locale } = useI18n();
-  const numLocale = locale === 'pt-BR' ? 'pt-BR' : 'en-US';
+  const { t } = useI18n();
+  const numLocale = 'pt-BR';
   return (
     <div className="space-y-4">
       {/* Fund info + returns */}
@@ -337,8 +337,8 @@ function EtfPanel({ etf, currency }: { etf: EtfData; currency: string }) {
 /* ─── Fair value panel (stocks) ─────────────────────────────────────────────── */
 
 function FairValuePanel({ data }: { data: FundamentalsResult }) {
-  const { t, locale } = useI18n();
-  const numLocale = locale === 'pt-BR' ? 'pt-BR' : 'en-US';
+  const { t } = useI18n();
+  const numLocale = 'pt-BR';
   const { analystTarget, grahamValue, recentUpgrades, currentPrice, currency } = data;
   const hasContent = analystTarget || grahamValue || (recentUpgrades && recentUpgrades.length > 0);
   if (!hasContent) return null;
@@ -486,8 +486,8 @@ function FairValuePanel({ data }: { data: FundamentalsResult }) {
 /* ─── Expanded fundamentals content ────────────────────────────────────────── */
 
 function FundamentalsContent({ data }: { data: FundamentalsResult }) {
-  const { t, locale } = useI18n();
-  const numLocale = locale === 'pt-BR' ? 'pt-BR' : 'en-US';
+  const { t } = useI18n();
+  const numLocale = 'pt-BR';
   const isEtf = data.instrumentType === 'ETF' || data.instrumentType === 'MUTUALFUND';
   const { signal } = overallSignal(data);
   const OverallIcon = signal === 'cheap' ? TrendingUp : signal === 'expensive' ? TrendingDown : Minus;
@@ -600,8 +600,8 @@ function TickerRow({
   onRemove: (t: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const { t, locale } = useI18n();
-  const numLocale = locale === 'pt-BR' ? 'pt-BR' : 'en-US';
+  const { t } = useI18n();
+  const numLocale = 'pt-BR';
 
   useEffect(() => {
     if (forceOpen !== undefined) setOpen(forceOpen);
