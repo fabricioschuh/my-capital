@@ -381,6 +381,7 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
         categorySlug={category.slug}
         open={transactionOpen}
         onOpenChange={setTransactionOpen}
+        initialMode="new"
       />
     </>
   );

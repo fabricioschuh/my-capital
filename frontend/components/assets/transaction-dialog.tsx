@@ -481,6 +481,7 @@ interface TransactionDialogProps {
   categorySlug: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialMode?: 'select' | 'existing' | 'new';
 }
 
 /* ─── Mode selector ────────────────────────────────────────────────────────── */
@@ -966,13 +967,14 @@ export function TransactionDialog({
   categorySlug,
   open,
   onOpenChange,
+  initialMode = 'select',
 }: TransactionDialogProps) {
-  const [mode, setMode] = useState<'select' | 'existing' | 'new'>('select');
+  const [mode, setMode] = useState<'select' | 'existing' | 'new'>(initialMode);
   const { t } = useI18n();
 
   useEffect(() => {
-    if (!open) setMode('select');
-  }, [open]);
+    if (!open) setMode(initialMode);
+  }, [open, initialMode]);
 
   const titles: Record<typeof mode, string> = {
     select: categoryName,
