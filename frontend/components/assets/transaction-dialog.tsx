@@ -276,7 +276,7 @@ interface CategoryConfig {
   showMaturity: boolean;
   showMaturityCheckbox: boolean;
   isFixedIncome: boolean;
-  /** When true, type/indexer/rate are shown but not required (for emergency-reserve, cash) */
+  /** @deprecated */
   fiTypeOptional?: boolean;
 }
 
@@ -466,7 +466,6 @@ const newAssetSchema = z.object({
   broker: z.string().optional(),
   maturity: z.string().optional(),
   // fixed income specific
-  fiType: z.enum(['CDB', 'LCI', 'LCA']).optional(),
   fiIndexer: z.enum(['CDI', 'IPCA', 'Prefixado']).optional(),
   fiRate: z.coerce.number().optional(),
 });
@@ -645,14 +644,12 @@ function indexerRatePlaceholder(indexer: string | undefined) {
 }
 
 function buildFixedIncomeName(
-  fiType?: string,
   broker?: string,
   fiIndexer?: string,
   fiRate?: number,
   maturity?: string,
 ): string {
   const parts: string[] = [];
-  if (fiType) parts.push(fiType);
   if (broker) parts.push(broker);
   if (fiIndexer && fiRate) {
     if (fiIndexer === 'CDI') parts.push(`${fiRate}% CDI`);
@@ -697,14 +694,12 @@ function NewAssetForm({
     defaultValues: {
       currency: defaultCurrency,
       totalValue: undefined,
-      fiType: undefined,
       fiIndexer: undefined,
     },
   });
 
   const currency = watch('currency');
   const totalValue = watch('totalValue');
-  const fiType = watch('fiType');
   const fiIndexer = watch('fiIndexer');
   const fiRate = watch('fiRate');
   const broker = watch('broker');
@@ -713,10 +708,10 @@ function NewAssetForm({
   // Auto-generate name for fixed income
   useEffect(() => {
     if (config.isFixedIncome) {
-      const suggested = buildFixedIncomeName(fiType, broker, fiIndexer, fiRate, maturity);
+      const suggested = buildFixedIncomeName(broker, fiIndexer, fiRate, maturity);
       if (suggested) setValue('name', suggested);
     }
-  }, [fiType, broker, fiIndexer, fiRate, maturity, config.isFixedIncome, setValue]);
+  }, [broker, fiIndexer, fiRate, maturity, config.isFixedIncome, setValue]);
 
   const currencySymbol = currency === 'BRL' ? 'R$' : currency === 'USD' ? 'US$' : '€';
 
@@ -738,32 +733,8 @@ function NewAssetForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
-      {/* ── Fixed income type selector ── */}
-      {config.isFixedIncome && (
-        <div className="space-y-1.5">
-          <Label>
-            {t('td.type_label')}
-            {config.fiTypeOptional && <span className="ml-1 font-normal text-muted-foreground">(opcional)</span>}
-          </Label>
-          <div className="flex gap-2">
-            {(['CDB', 'LCI', 'LCA'] as const).map((tp) => (
-              <Button
-                key={tp}
-                type="button"
-                variant={fiType === tp ? 'default' : 'outline'}
-                size="sm"
-                className="flex-1"
-                onClick={() => setValue('fiType', fiType === tp && config.fiTypeOptional ? undefined : tp)}
-              >
-                {tp}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ── Fixed income indexer + rate ── */}
-      {config.isFixedIncome && (fiType || config.fiTypeOptional) && (
+      {config.isFixedIncome && (
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label>{t('td.indexer')}</Label>
@@ -782,71 +753,42 @@ function NewAssetForm({
           {fiIndexer && (
             <div className="space-y-1.5">
               <Label htmlFor="fiRate">{indexerRateLabel(fiIndexer)}</Label>
-              <Input
-                id="fiRate"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder={indexerRatePlaceholder(fiIndexer)}
-                {...register('fiRate')}
-              />
+              <Input id="fiRate" type="number" step="0.01" min="0" placeholder={indexerRatePlaceholder(fiIndexer)} {...register('fiRate')} />
             </div>
           )}
         </div>
       )}
 
       {/* ── Bank / broker ── */}
-      {config.isFixedIncome && (fiType || config.fiTypeOptional) && (
+      {config.isFixedIncome && (
         <div className="space-y-1.5">
           <Label htmlFor="broker-fi">{t(config.brokerLabelKey)}</Label>
-          <BrokerInput
-            id="broker-fi"
-            placeholder={config.brokerPlaceholder}
-            slug={categorySlug}
-            value={broker ?? ''}
-            onChange={(v) => setValue('broker', v)}
-          />
+          <BrokerInput id="broker-fi" placeholder={config.brokerPlaceholder} slug={categorySlug} value={broker ?? ''} onChange={(v) => setValue('broker', v)} />
         </div>
       )}
 
       {/* ── Maturity ── */}
-      {config.isFixedIncome && (fiType || config.fiTypeOptional) && (
+      {config.isFixedIncome && (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor="maturity">{t('td.maturity')}</Label>
             {config.showMaturityCheckbox && (
               <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={noMaturity}
-                  onChange={(e) => {
-                    setNoMaturity(e.target.checked);
-                    if (e.target.checked) setValue('maturity', '');
-                  }}
-                  className="h-3.5 w-3.5 rounded border-input accent-primary"
-                />
+                <input type="checkbox" checked={noMaturity} onChange={(e) => { setNoMaturity(e.target.checked); if (e.target.checked) setValue('maturity', ''); }} className="h-3.5 w-3.5 rounded border-input accent-primary" />
                 {t('td.noMaturity')}
               </label>
             )}
           </div>
-          {!noMaturity && (
-            <Input id="maturity" type="month" {...register('maturity')} />
-          )}
+          {!noMaturity && <Input id="maturity" type="month" {...register('maturity')} />}
         </div>
       )}
 
-      {/* ── Name (auto-generated for fixed income, or free-text when no type selected) ── */}
+      {/* ── Name ── */}
       {config.isFixedIncome && (
         <div className="space-y-1.5">
           <Label htmlFor="name">{t(config.nameLabelKey)} *</Label>
-          <Input
-            id="name"
-            placeholder={config.namePlaceholder}
-            {...register('name')}
-          />
-          {(fiType || fiIndexer) && (
-            <p className="text-xs text-muted-foreground">{t('td.autoGenerated')}</p>
-          )}
+          <Input id="name" placeholder={config.namePlaceholder} {...register('name')} />
+          {fiIndexer && <p className="text-xs text-muted-foreground">{t('td.autoGenerated')}</p>}
           {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
         </div>
       )}
@@ -1037,13 +979,6 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
   const defaultCurrency = asset.currency;
 
   // Parse fixed income fields from name
-  function parseFixedIncomeType(name: string): 'CDB' | 'LCI' | 'LCA' | undefined {
-    const n = name.toUpperCase();
-    if (n.startsWith('CDB')) return 'CDB';
-    if (n.startsWith('LCI')) return 'LCI';
-    if (n.startsWith('LCA')) return 'LCA';
-    return undefined;
-  }
   function parseIndexer(name: string): 'CDI' | 'IPCA' | 'Prefixado' | undefined {
     const n = name.toUpperCase();
     if (/\bIPCA\b/.test(n)) return 'IPCA';
@@ -1059,7 +994,6 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
     return undefined;
   }
 
-  const parsedType = config.isFixedIncome ? parseFixedIncomeType(asset.name) : undefined;
   const parsedIndexer = config.isFixedIncome ? parseIndexer(asset.name) : undefined;
   const parsedRate = config.isFixedIncome ? parseRate(asset.name, parsedIndexer) : undefined;
 
@@ -1079,7 +1013,6 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
       currency: defaultCurrency,
       broker: asset.broker ?? '',
       maturity: undefined,
-      fiType: parsedType,
       fiIndexer: parsedIndexer,
       fiRate: parsedRate,
     },
@@ -1087,7 +1020,6 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
 
   // Reset form when asset changes
   useEffect(() => {
-    const pt = config.isFixedIncome ? parseFixedIncomeType(asset.name) : undefined;
     const pi = config.isFixedIncome ? parseIndexer(asset.name) : undefined;
     reset({
       name: asset.name,
@@ -1096,7 +1028,6 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
       currency: asset.currency,
       broker: asset.broker ?? '',
       maturity: undefined,
-      fiType: pt,
       fiIndexer: pi,
       fiRate: config.isFixedIncome ? parseRate(asset.name, pi) : undefined,
     });
@@ -1106,7 +1037,6 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
 
   const currency = watch('currency');
   const totalValue = watch('totalValue');
-  const fiType = watch('fiType');
   const fiIndexer = watch('fiIndexer');
   const fiRate = watch('fiRate');
   const broker = watch('broker');
@@ -1114,11 +1044,11 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
 
   // Auto-generate name for fixed income when fields change
   useEffect(() => {
-    if (config.isFixedIncome && (fiType || fiIndexer || broker)) {
-      const suggested = buildFixedIncomeName(fiType, broker, fiIndexer, fiRate, maturity);
+    if (config.isFixedIncome && (fiIndexer || broker)) {
+      const suggested = buildFixedIncomeName(broker, fiIndexer, fiRate, maturity);
       if (suggested) setValue('name', suggested);
     }
-  }, [fiType, broker, fiIndexer, fiRate, maturity, config.isFixedIncome, setValue]);
+  }, [broker, fiIndexer, fiRate, maturity, config.isFixedIncome, setValue]);
 
   const onSubmit = (data: NewAssetFormValues) => {
     updateAsset(
@@ -1147,32 +1077,8 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
-          {/* ── Fixed income type ── */}
-          {config.isFixedIncome && (
-            <div className="space-y-1.5">
-              <Label>
-                {t('td.type_label')}
-                {config.fiTypeOptional && <span className="ml-1 font-normal text-muted-foreground">(opcional)</span>}
-              </Label>
-              <div className="flex gap-2">
-                {(['CDB', 'LCI', 'LCA'] as const).map((tp) => (
-                  <Button
-                    key={tp}
-                    type="button"
-                    variant={fiType === tp ? 'default' : 'outline'}
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => setValue('fiType', fiType === tp && config.fiTypeOptional ? undefined : tp)}
-                  >
-                    {tp}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* ── Fixed income indexer + rate ── */}
-          {config.isFixedIncome && (fiType || config.fiTypeOptional) && (
+          {config.isFixedIncome && (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>{t('td.indexer')}</Label>
@@ -1198,20 +1104,15 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
           )}
 
           {/* ── Broker ── */}
-          {config.isFixedIncome && (fiType || config.fiTypeOptional) && (
+          {config.isFixedIncome && (
             <div className="space-y-1.5">
               <Label>{t(config.brokerLabelKey)}</Label>
-              <BrokerInput
-                placeholder={config.brokerPlaceholder}
-                slug={categorySlug}
-                value={broker ?? ''}
-                onChange={(v) => setValue('broker', v)}
-              />
+              <BrokerInput placeholder={config.brokerPlaceholder} slug={categorySlug} value={broker ?? ''} onChange={(v) => setValue('broker', v)} />
             </div>
           )}
 
           {/* ── Maturity ── */}
-          {config.isFixedIncome && (fiType || config.fiTypeOptional) && (
+          {config.isFixedIncome && (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="edit-maturity">{t('td.maturity')}</Label>
@@ -1231,7 +1132,7 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
             <div className="space-y-1.5">
               <Label htmlFor="edit-name">{t(config.nameLabelKey)} *</Label>
               <Input id="edit-name" placeholder={config.namePlaceholder} {...register('name')} />
-              {(fiType || fiIndexer) && <p className="text-xs text-muted-foreground">{t('td.autoGenerated')}</p>}
+              {fiIndexer && <p className="text-xs text-muted-foreground">{t('td.autoGenerated')}</p>}
               {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
             </div>
           )}
