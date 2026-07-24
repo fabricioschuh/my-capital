@@ -194,8 +194,8 @@ export const ptBr: typeof import('./en').en = {
   'td.indexer': 'Indexador *',
   'td.selectIndexer': 'Selecione…',
   'td.type_label': 'Tipo *',
-  'td.invested': 'Valor investido *',
-  'td.totalValue': 'Valor total *',
+  'td.invested': 'Valor investido',
+  'td.totalValue': 'Valor total',
 
   // Add asset dialog
   'aa.trigger': 'Adicionar Ativo',
