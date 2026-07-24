@@ -314,6 +314,7 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
     showMaturity: true,
     showMaturityCheckbox: false,
     isFixedIncome: true,
+    fiTypeOptional: true,
   },
   'fixed-income-international': {
     nameLabelKey: 'cc.securityName',
