@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { CategorySummary } from '@/types';
+import { useState, useEffect } from 'react';
+import { CategorySummary, Asset } from '@/types';
 import {
   formatCurrency,
   formatPercentage,
@@ -12,18 +12,17 @@ import {
   TrendingUp, TrendingDown, Minus, ChevronDown, Plus,
   ShieldCheck, Banknote, BarChart3, Globe, Landmark, CandlestickChart,
   Globe2, Building2, Bitcoin, Building, GripVertical, PieChart, AreaChart,
-  Pencil, Check, X,
+  Pencil,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { TransactionDialog } from '@/components/assets/transaction-dialog';
-import { useAssets, useUpdateAsset } from '@/hooks/use-assets';
+import { TransactionDialog, EditAssetDialog } from '@/components/assets/transaction-dialog';
+import { useAssets } from '@/hooks/use-assets';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useI18n } from '@/lib/i18n/i18n-context';
-import React from 'react';
 
 interface CategoryRowProps {
   category: CategorySummary;
@@ -60,116 +59,47 @@ function detectFixedIncomeSubcategory(name: string): FixedIncomeSubcategory {
 
 const SUBCATEGORY_ORDER: FixedIncomeSubcategory[] = ['CDI', 'IPCA+', 'Pré-fixado', 'Outros'];
 
-/* ─── Inline currency input ─────────────────────────────────────────────────── */
-
-function InlineCurrencyInput({ value, currency, onConfirm, onCancel }: {
-  value: number;
-  currency: string;
-  onConfirm: (v: number) => void;
-  onCancel: () => void;
-}) {
-  const symbol = currency === 'USD' ? 'US$' : currency === 'EUR' ? '€' : 'R$';
-  const [digits, setDigits] = React.useState(() => Math.round(value * 100).toString());
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => { inputRef.current?.focus(); inputRef.current?.select(); }, []);
-
-  const numeric = digits === '' ? 0 : parseInt(digits, 10) / 100;
-  const formatted = digits === ''
-    ? ''
-    : `${symbol} ${(parseInt(digits, 10) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') { e.preventDefault(); onConfirm(numeric); }
-    if (e.key === 'Escape') onCancel();
-  };
-
-  return (
-    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-      <input
-        ref={inputRef}
-        type="text"
-        inputMode="numeric"
-        value={formatted}
-        onChange={(e) => setDigits(e.target.value.replace(/\D/g, ''))}
-        onKeyDown={handleKeyDown}
-        className="h-8 w-36 rounded-md border border-primary/60 bg-background px-2 text-sm tabular-nums text-right shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-      />
-      <button
-        type="button"
-        onClick={() => onConfirm(numeric)}
-        className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
-      >
-        <Check className="h-3.5 w-3.5" />
-      </button>
-      <button
-        type="button"
-        onClick={onCancel}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-border/60 text-muted-foreground hover:bg-muted transition-colors"
-      >
-        <X className="h-3.5 w-3.5" />
-      </button>
-    </div>
-  );
-}
-
 /* ─── Asset row ─────────────────────────────────────────────────────────────── */
 
-function AssetRow({ asset }: {
-  asset: { id: string; name: string; ticker?: string; quantity: number; unitPrice: number; marketPrice?: number; currency: string }
-}) {
-  const [editing, setEditing] = useState(false);
-  const { mutate: updateAsset, isPending } = useUpdateAsset();
+function AssetRow({ asset, categorySlug }: { asset: Asset; categorySlug: string }) {
+  const [editOpen, setEditOpen] = useState(false);
   const total = asset.quantity * (asset.marketPrice ?? asset.unitPrice);
-  const currentValue = asset.quantity * asset.unitPrice;
-
-  const handleConfirm = (newValue: number) => {
-    if (newValue <= 0 || newValue === currentValue) { setEditing(false); return; }
-    updateAsset(
-      { id: asset.id, dto: { unitPrice: newValue } },
-      { onSuccess: () => setEditing(false), onError: () => setEditing(false) },
-    );
-  };
 
   return (
-    <div className="flex items-center justify-between py-3 px-4 hover:bg-muted/40 rounded-lg transition-colors group">
-      <div className="flex items-center gap-4 min-w-0">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-bold uppercase">
-          {(asset.ticker ?? asset.name).slice(0, 3)}
+    <>
+      <div className="flex items-center justify-between py-3 px-4 hover:bg-muted/40 rounded-lg transition-colors group">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-bold uppercase">
+            {(asset.ticker ?? asset.name).slice(0, 3)}
+          </div>
+          <div className="min-w-0">
+            <p className="text-base font-semibold leading-tight truncate">
+              {asset.ticker ?? asset.name}
+            </p>
+            {asset.ticker && (
+              <p className="text-sm text-muted-foreground truncate">{asset.name}</p>
+            )}
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="text-base font-semibold leading-tight truncate">
-            {asset.ticker ?? asset.name}
-          </p>
-          {asset.ticker && (
-            <p className="text-sm text-muted-foreground truncate">{asset.name}</p>
-          )}
+        <div className="shrink-0 ml-6 flex items-center gap-2">
+          <p className="text-base font-bold tabular-nums">{formatCurrency(total, asset.currency)}</p>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setEditOpen(true); }}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/30 hover:text-muted-foreground hover:bg-muted opacity-0 group-hover:opacity-100 transition-all"
+            title="Editar ativo"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
-      <div className="shrink-0 ml-6 flex items-center gap-2">
-        {editing ? (
-          <InlineCurrencyInput
-            value={currentValue}
-            currency={asset.currency}
-            onConfirm={handleConfirm}
-            onCancel={() => setEditing(false)}
-          />
-        ) : (
-          <>
-            <p className="text-base font-bold tabular-nums">{formatCurrency(total, asset.currency)}</p>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setEditing(true); }}
-              disabled={isPending}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/30 hover:text-muted-foreground hover:bg-muted opacity-0 group-hover:opacity-100 transition-all"
-              title="Editar valor"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
-          </>
-        )}
-      </div>
-    </div>
+      <EditAssetDialog
+        asset={asset}
+        categorySlug={categorySlug}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
+    </>
   );
 }
 
@@ -334,7 +264,7 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
               )}
               {!isLoading && assets && assets.length > 0 && !['fixed-income', 'emergency-reserve', 'cash'].includes(category.slug) && (
                 assets.map((asset) => (
-                  <AssetRow key={asset.id} asset={asset} />
+                  <AssetRow key={asset.id} asset={asset} categorySlug={category.slug} />
                 ))
               )}
               {!isLoading && assets && assets.length > 0 && ['fixed-income', 'emergency-reserve', 'cash'].includes(category.slug) && (
@@ -350,7 +280,7 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
                       </div>
                       <div className="space-y-1">
                         {grouped.map((asset) => (
-                          <AssetRow key={asset.id} asset={asset} />
+                          <AssetRow key={asset.id} asset={asset} categorySlug={category.slug} />
                         ))}
                       </div>
                     </div>

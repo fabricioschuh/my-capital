@@ -79,9 +79,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAssets, useTransactAsset, useCreateAsset } from '@/hooks/use-assets';
+import { useAssets, useTransactAsset, useCreateAsset, useUpdateAsset } from '@/hooks/use-assets';
 import { useI18n } from '@/lib/i18n/i18n-context';
 import { en } from '@/lib/i18n/translations/en';
+import { Asset } from '@/types';
 import { Loader2, PackagePlus, ArrowLeftRight, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -1013,6 +1014,309 @@ export function TransactionDialog({
             onSuccess={() => onOpenChange(false)}
           />
         )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ─── Edit asset dialog ────────────────────────────────────────────────────── */
+
+interface EditAssetDialogProps {
+  asset: Asset;
+  categorySlug: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: EditAssetDialogProps) {
+  const config = getCategoryConfig(categorySlug);
+  const { mutate: updateAsset, isPending } = useUpdateAsset();
+  const [noMaturity, setNoMaturity] = React.useState(false);
+  const { t } = useI18n();
+
+  const defaultCurrency = asset.currency;
+
+  // Parse fixed income fields from name
+  function parseFixedIncomeType(name: string): 'CDB' | 'LCI' | 'LCA' | undefined {
+    const n = name.toUpperCase();
+    if (n.startsWith('CDB')) return 'CDB';
+    if (n.startsWith('LCI')) return 'LCI';
+    if (n.startsWith('LCA')) return 'LCA';
+    return undefined;
+  }
+  function parseIndexer(name: string): 'CDI' | 'IPCA' | 'Prefixado' | undefined {
+    const n = name.toUpperCase();
+    if (/\bIPCA\b/.test(n)) return 'IPCA';
+    if (/\bCDI\b/.test(n)) return 'CDI';
+    if (/PREFIXADO|% A\.A\.|\bPRE\b/.test(n)) return 'Prefixado';
+    return undefined;
+  }
+  function parseRate(name: string, indexer: string | undefined): number | undefined {
+    if (!indexer) return undefined;
+    if (indexer === 'CDI') { const m = name.match(/(\d+(?:[.,]\d+)?)\s*%\s*CDI/i); return m ? parseFloat(m[1].replace(',', '.')) : undefined; }
+    if (indexer === 'IPCA') { const m = name.match(/IPCA\+\s*(\d+(?:[.,]\d+)?)/i); return m ? parseFloat(m[1].replace(',', '.')) : undefined; }
+    if (indexer === 'Prefixado') { const m = name.match(/(\d+(?:[.,]\d+)?)\s*%\s*a\.a\./i); return m ? parseFloat(m[1].replace(',', '.')) : undefined; }
+    return undefined;
+  }
+
+  const parsedType = config.isFixedIncome ? parseFixedIncomeType(asset.name) : undefined;
+  const parsedIndexer = config.isFixedIncome ? parseIndexer(asset.name) : undefined;
+  const parsedRate = config.isFixedIncome ? parseRate(asset.name, parsedIndexer) : undefined;
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+    reset,
+  } = useForm<NewAssetFormValues>({
+    resolver: zodResolver(newAssetSchema),
+    defaultValues: {
+      name: asset.name,
+      ticker: asset.ticker ?? '',
+      totalValue: asset.unitPrice,
+      currency: defaultCurrency,
+      broker: asset.broker ?? '',
+      maturity: undefined,
+      fiType: parsedType,
+      fiIndexer: parsedIndexer,
+      fiRate: parsedRate,
+    },
+  });
+
+  // Reset form when asset changes
+  useEffect(() => {
+    const pt = config.isFixedIncome ? parseFixedIncomeType(asset.name) : undefined;
+    const pi = config.isFixedIncome ? parseIndexer(asset.name) : undefined;
+    reset({
+      name: asset.name,
+      ticker: asset.ticker ?? '',
+      totalValue: asset.unitPrice,
+      currency: asset.currency,
+      broker: asset.broker ?? '',
+      maturity: undefined,
+      fiType: pt,
+      fiIndexer: pi,
+      fiRate: config.isFixedIncome ? parseRate(asset.name, pi) : undefined,
+    });
+    setNoMaturity(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [asset.id, open]);
+
+  const currency = watch('currency');
+  const totalValue = watch('totalValue');
+  const fiType = watch('fiType');
+  const fiIndexer = watch('fiIndexer');
+  const fiRate = watch('fiRate');
+  const broker = watch('broker');
+  const maturity = watch('maturity');
+
+  // Auto-generate name for fixed income when fields change
+  useEffect(() => {
+    if (config.isFixedIncome && (fiType || fiIndexer || broker)) {
+      const suggested = buildFixedIncomeName(fiType, broker, fiIndexer, fiRate, maturity);
+      if (suggested) setValue('name', suggested);
+    }
+  }, [fiType, broker, fiIndexer, fiRate, maturity, config.isFixedIncome, setValue]);
+
+  const onSubmit = (data: NewAssetFormValues) => {
+    updateAsset(
+      {
+        id: asset.id,
+        dto: {
+          name: data.name,
+          ticker: data.ticker || undefined,
+          unitPrice: data.totalValue,
+          currency: data.currency,
+          broker: data.broker || undefined,
+        },
+      },
+      { onSuccess: () => onOpenChange(false) },
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-base">
+            {asset.ticker ?? asset.name}
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
+          {/* ── Fixed income type ── */}
+          {config.isFixedIncome && (
+            <div className="space-y-1.5">
+              <Label>
+                {t('td.type_label')}
+                {config.fiTypeOptional && <span className="ml-1 font-normal text-muted-foreground">(opcional)</span>}
+              </Label>
+              <div className="flex gap-2">
+                {(['CDB', 'LCI', 'LCA'] as const).map((tp) => (
+                  <Button
+                    key={tp}
+                    type="button"
+                    variant={fiType === tp ? 'default' : 'outline'}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setValue('fiType', fiType === tp && config.fiTypeOptional ? undefined : tp)}
+                  >
+                    {tp}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Fixed income indexer + rate ── */}
+          {config.isFixedIncome && (fiType || config.fiTypeOptional) && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>{t('td.indexer')}</Label>
+                <Select
+                  value={fiIndexer ?? ''}
+                  onValueChange={(v) => setValue('fiIndexer', v as 'CDI' | 'IPCA' | 'Prefixado')}
+                >
+                  <SelectTrigger><SelectValue placeholder={t('td.selectIndexer')} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CDI">CDI</SelectItem>
+                    <SelectItem value="IPCA">IPCA+</SelectItem>
+                    <SelectItem value="Prefixado">Pré-fixado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {fiIndexer && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-fiRate">{indexerRateLabel(fiIndexer)}</Label>
+                  <Input id="edit-fiRate" type="number" step="0.01" min="0" placeholder={indexerRatePlaceholder(fiIndexer)} {...register('fiRate')} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Broker ── */}
+          {config.isFixedIncome && (fiType || config.fiTypeOptional) && (
+            <div className="space-y-1.5">
+              <Label>{t(config.brokerLabelKey)}</Label>
+              <BrokerInput
+                placeholder={config.brokerPlaceholder}
+                slug={categorySlug}
+                value={broker ?? ''}
+                onChange={(v) => setValue('broker', v)}
+              />
+            </div>
+          )}
+
+          {/* ── Maturity ── */}
+          {config.isFixedIncome && (fiType || config.fiTypeOptional) && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edit-maturity">{t('td.maturity')}</Label>
+                {config.showMaturityCheckbox && (
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                    <input type="checkbox" checked={noMaturity} onChange={(e) => { setNoMaturity(e.target.checked); if (e.target.checked) setValue('maturity', ''); }} className="h-3.5 w-3.5 rounded border-input accent-primary" />
+                    {t('td.noMaturity')}
+                  </label>
+                )}
+              </div>
+              {!noMaturity && <Input id="edit-maturity" type="month" {...register('maturity')} />}
+            </div>
+          )}
+
+          {/* ── Name ── */}
+          {config.isFixedIncome && (
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-name">{t(config.nameLabelKey)} *</Label>
+              <Input id="edit-name" placeholder={config.namePlaceholder} {...register('name')} />
+              {(fiType || fiIndexer) && <p className="text-xs text-muted-foreground">{t('td.autoGenerated')}</p>}
+              {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+            </div>
+          )}
+
+          {/* ── Standard fields (non fixed-income) ── */}
+          {!config.isFixedIncome && (
+            <>
+              <div className={cn('grid gap-3', config.tickerMode !== 'hidden' ? 'grid-cols-2' : 'grid-cols-1')}>
+                <div className={cn('space-y-1.5', config.tickerMode === 'hidden' && 'col-span-1')}>
+                  <Label htmlFor="edit-name">{t(config.nameLabelKey)} *</Label>
+                  <Input id="edit-name" placeholder={config.namePlaceholder} {...register('name')} />
+                  {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+                </div>
+                {config.tickerMode !== 'hidden' && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="edit-ticker">{t(config.tickerLabelKey ?? 'cc.ticker')}</Label>
+                    <Input id="edit-ticker" placeholder={config.tickerPlaceholder ?? 'ex: TICK3'} {...register('ticker')} />
+                  </div>
+                )}
+              </div>
+
+              {config.currency === 'free' && (
+                <div className="space-y-1.5">
+                  <Label>{t('td.currency')}</Label>
+                  <Select value={currency} onValueChange={(v) => setValue('currency', v as 'BRL' | 'USD' | 'EUR')}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BRL">{t('td.currencyBRL')}</SelectItem>
+                      <SelectItem value="USD">{t('td.currencyUSD')}</SelectItem>
+                      <SelectItem value="EUR">{t('td.currencyEUR')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {config.showMaturity && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="edit-maturity">{t('td.maturity')}</Label>
+                    {config.showMaturityCheckbox && (
+                      <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                        <input type="checkbox" checked={noMaturity} onChange={(e) => { setNoMaturity(e.target.checked); if (e.target.checked) setValue('maturity', ''); }} className="h-3.5 w-3.5 rounded border-input accent-primary" />
+                        {t('td.noMaturity')}
+                      </label>
+                    )}
+                  </div>
+                  {!noMaturity && <Input id="edit-maturity" type="month" {...register('maturity')} />}
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label>{t(config.brokerLabelKey)}</Label>
+                <BrokerInput
+                  placeholder={config.brokerPlaceholder}
+                  slug={categorySlug}
+                  value={broker ?? ''}
+                  onChange={(v) => setValue('broker', v)}
+                />
+              </div>
+            </>
+          )}
+
+          {/* ── Value ── */}
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-total">{config.isFixedIncome ? t('td.invested') : t('td.totalValue')} *</Label>
+            <CurrencyInput
+              id="edit-total"
+              value={totalValue}
+              currency={currency}
+              onChange={(v) => setValue('totalValue', v, { shouldValidate: true })}
+            />
+            {errors.totalValue && <p className="text-xs text-destructive">{errors.totalValue.message}</p>}
+          </div>
+
+          {config.currency !== 'free' && (
+            <p className="text-xs text-muted-foreground">Moeda: <span className="font-medium">{config.currency}</span></p>
+          )}
+
+          <DialogFooter className="pt-2">
+            <Button type="submit" disabled={isPending} className="w-full">
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
