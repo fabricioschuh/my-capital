@@ -91,7 +91,7 @@ function AllocationChart({ summary }: AllocationChartProps) {
       <h3 className="text-base font-semibold mb-4">{t('at.chartTitle')}</h3>
       <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 4, right: 8, left: -8, bottom: 40 }}>
+          <BarChart data={data} margin={{ top: 24, right: 8, left: -8, bottom: 40 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
             <XAxis
               dataKey="name"
@@ -107,7 +107,9 @@ function AllocationChart({ summary }: AllocationChartProps) {
             />
             <Tooltip content={<AllocationTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.4 }} />
             <Legend
-              wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+              verticalAlign="top"
+              align="right"
+              wrapperStyle={{ fontSize: 12, paddingBottom: 8 }}
               formatter={(value) => <span style={{ color: 'hsl(var(--foreground))' }}>{value}</span>}
             />
             <Bar dataKey={t('at.current')} fill="#6366f1" radius={[3, 3, 0, 0]} maxBarSize={40}>

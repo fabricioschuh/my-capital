@@ -90,15 +90,18 @@ import { cn } from '@/lib/utils';
 const BROKERS_BR = [
   'XP Investimentos',
   'BTG Pactual',
+  'Ágora',
   'Rico',
   'Clear',
-  'Easynvest (Nubank)',
+  'Nubank',
   'Inter',
   'Itaú',
   'Bradesco',
   'Santander',
   'Banco do Brasil',
   'Caixa Econômica Federal',
+  'Mercado Pago',
+  'C6 Bank',
   'Modal',
   'Genial',
   'Órama',
@@ -106,7 +109,6 @@ const BROKERS_BR = [
   'Guide',
   'Toro',
   'Avenue',
-  'C6 Bank',
   'Sicoob',
 ];
 
@@ -149,10 +151,11 @@ const BANKS_BR = [
   'BTG Pactual',
   'XP Investimentos',
   'Inter',
+  'Mercado Pago',
   'C6 Bank',
+  'PicPay',
   'Daycoval',
   'Sofisa',
-  'PicPay',
   'BS2',
   'BV',
   'Safra',
@@ -162,7 +165,7 @@ const BANKS_BR = [
 ];
 
 function brokerListForSlug(slug: string): string[] {
-  if (slug === 'cryptocurrencies') return EXCHANGES_CRYPTO;
+  if (slug === 'cryptocurrencies') return [...EXCHANGES_CRYPTO, 'XP Investimentos', 'BTG Pactual', 'Rico', 'Clear', 'Inter', 'Nubank'];
   if (slug === 'fixed-income') return BANKS_BR;
   if (
     slug === 'international-stocks' ||
@@ -372,13 +375,13 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   },
   'cryptocurrencies': {
     nameLabelKey: 'cc.currencyName',
-    namePlaceholder: 'ex: Bitcoin',
+    namePlaceholder: 'ex: Bitcoin, HASH11',
     tickerMode: 'required',
     tickerLabelKey: 'cc.symbolRequired',
-    tickerPlaceholder: 'ex: BTC',
-    currency: 'USD',
+    tickerPlaceholder: 'ex: BTC, BITH11, HASH11',
+    currency: 'free',
     brokerLabelKey: 'cc.exchange',
-    brokerPlaceholder: 'ex: Binance, Coinbase',
+    brokerPlaceholder: 'ex: Binance, XP Investimentos',
     showMaturity: false,
     showMaturityCheckbox: false,
     isFixedIncome: false,
