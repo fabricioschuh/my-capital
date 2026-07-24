@@ -276,8 +276,6 @@ interface CategoryConfig {
   showMaturity: boolean;
   showMaturityCheckbox: boolean;
   isFixedIncome: boolean;
-  /** @deprecated */
-  fiTypeOptional?: boolean;
 }
 
 const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
@@ -291,7 +289,6 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
     showMaturity: true,
     showMaturityCheckbox: true,
     isFixedIncome: true,
-    fiTypeOptional: true,
   },
   'cash': {
     nameLabelKey: 'cc.description',
@@ -303,7 +300,6 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
     showMaturity: true,
     showMaturityCheckbox: true,
     isFixedIncome: true,
-    fiTypeOptional: true,
   },
   'fixed-income': {
     nameLabelKey: 'cc.description',
@@ -315,7 +311,6 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
     showMaturity: true,
     showMaturityCheckbox: false,
     isFixedIncome: true,
-    fiTypeOptional: true,
   },
   'fixed-income-international': {
     nameLabelKey: 'cc.securityName',

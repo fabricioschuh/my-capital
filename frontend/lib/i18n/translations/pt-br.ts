@@ -191,9 +191,8 @@ export const ptBr: typeof import('./en').en = {
   'td.currencyBRL': 'BRL — Real',
   'td.currencyUSD': 'USD — Dólar',
   'td.currencyEUR': 'EUR — Euro',
-  'td.indexer': 'Indexador *',
+  'td.indexer': 'Indexador',
   'td.selectIndexer': 'Selecione…',
-  'td.type_label': 'Tipo *',
   'td.invested': 'Valor investido',
   'td.totalValue': 'Valor total',
 

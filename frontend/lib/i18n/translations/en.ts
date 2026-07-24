@@ -191,9 +191,8 @@ export const en = {
   'td.currencyBRL': 'BRL — Real',
   'td.currencyUSD': 'USD — Dollar',
   'td.currencyEUR': 'EUR — Euro',
-  'td.indexer': 'Indexer *',
+  'td.indexer': 'Indexer',
   'td.selectIndexer': 'Select…',
-  'td.type_label': 'Type *',
   'td.invested': 'Amount invested',
   'td.totalValue': 'Total value',
 
