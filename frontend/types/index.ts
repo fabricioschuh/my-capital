@@ -107,6 +107,12 @@ export interface GrahamValue {
   marginOfSafety?: number;
 }
 
+export interface BazinValue {
+  ceilingPrice?: number;
+  dividendPerShare?: number;
+  marginOfSafety?: number;
+}
+
 export interface EtfData {
   quoteType?: string;
   expenseRatio?: number;
@@ -178,6 +184,7 @@ export interface FundamentalsResult {
 
   analystTarget?: AnalystTarget;
   grahamValue?: GrahamValue;
+  bazinValue?: BazinValue;
   recentUpgrades?: RecentUpgrade[];
   etf?: EtfData;
 }

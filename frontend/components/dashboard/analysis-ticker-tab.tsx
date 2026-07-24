@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useFundamentals } from '@/hooks/use-assets';
-import { FundamentalsResult, EtfData, RecentUpgrade } from '@/types';
+import { FundamentalsResult, BazinValue, EtfData, RecentUpgrade } from '@/types';
 import { watchlistService } from '@/services/watchlist.service';
 import {
   Loader2, Search, TrendingUp, TrendingDown, Minus, Info,
@@ -339,8 +339,8 @@ function EtfPanel({ etf, currency }: { etf: EtfData; currency: string }) {
 function FairValuePanel({ data }: { data: FundamentalsResult }) {
   const { t } = useI18n();
   const numLocale = 'pt-BR';
-  const { analystTarget, grahamValue, recentUpgrades, currentPrice, currency } = data;
-  const hasContent = analystTarget || grahamValue || (recentUpgrades && recentUpgrades.length > 0);
+  const { analystTarget, grahamValue, bazinValue, recentUpgrades, currentPrice, currency } = data;
+  const hasContent = analystTarget || grahamValue || bazinValue || (recentUpgrades && recentUpgrades.length > 0);
   if (!hasContent) return null;
 
   function gradeBadge(grade: string | undefined) {
@@ -383,6 +383,33 @@ function FairValuePanel({ data }: { data: FundamentalsResult }) {
                 label={t('fv.marginOfSafety')}
                 value={`${grahamValue.marginOfSafety.toFixed(1)}%`}
                 signal={grahamValue.marginOfSafety > 20 ? 'cheap' : grahamValue.marginOfSafety < -20 ? 'expensive' : 'fair'}
+                tooltip={t('fv.marginTip')}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Bazin ceiling */}
+        {bazinValue && (
+          <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+              {t('fv.bazinTitle')}
+            </h4>
+            <MetricRow
+              label={t('fv.bazinCeiling')}
+              value={fmtCurrency(bazinValue.ceilingPrice, currency, numLocale)}
+              tooltip={t('fv.bazinTip')}
+            />
+            <MetricRow
+              label={t('fv.bazinDpa')}
+              value={fmtCurrency(bazinValue.dividendPerShare, currency, numLocale)}
+              tooltip={t('fv.bazinDpaTip')}
+            />
+            {bazinValue.marginOfSafety != null && (
+              <MetricRow
+                label={t('fv.marginOfSafety')}
+                value={`${bazinValue.marginOfSafety.toFixed(1)}%`}
+                signal={bazinValue.marginOfSafety > 20 ? 'cheap' : bazinValue.marginOfSafety < -20 ? 'expensive' : 'fair'}
                 tooltip={t('fv.marginTip')}
               />
             )}

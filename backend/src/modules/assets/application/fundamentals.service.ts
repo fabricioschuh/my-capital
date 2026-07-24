@@ -18,7 +18,16 @@ export interface GrahamValue {
   grahamNumber?: number;
   eps?: number;
   bookValuePerShare?: number;
-  /** % margin of safety (positive = cheap vs Graham number) */
+  /** % margin of safety vs Graham number (positive = cheap) */
+  marginOfSafety?: number;
+}
+
+export interface BazinValue {
+  /** Bazin ceiling price: DPA / 0.06 */
+  ceilingPrice?: number;
+  /** Annual dividend per share used in the calculation */
+  dividendPerShare?: number;
+  /** % margin of safety vs Bazin ceiling (positive = cheap) */
   marginOfSafety?: number;
 }
 
@@ -109,6 +118,7 @@ export interface FundamentalsResult {
   // Fair value — stocks
   analystTarget?: AnalystTarget;
   grahamValue?: GrahamValue;
+  bazinValue?: BazinValue;
   recentUpgrades?: RecentUpgrade[];
 
   // ETF-specific
@@ -168,6 +178,17 @@ export class FundamentalsService {
         grahamValue = { grahamNumber, eps, bookValuePerShare: bvps, marginOfSafety };
       }
 
+      // Bazin ceiling: DPA / 0.06
+      const dividendRate: number | undefined = ks.trailingAnnualDividendRate ?? undefined;
+      let bazinValue: BazinValue | undefined;
+      if (dividendRate != null && dividendRate > 0) {
+        const ceilingPrice = dividendRate / 0.06;
+        const marginOfSafety = currentPrice
+          ? ((ceilingPrice - currentPrice) / currentPrice) * 100
+          : undefined;
+        bazinValue = { ceilingPrice, dividendPerShare: dividendRate, marginOfSafety };
+      }
+
       return {
         ticker,
         market: 'BR',
@@ -208,6 +229,7 @@ export class FundamentalsService {
 
         analystTarget: undefined,  // brapi doesn't provide analyst targets for BR
         grahamValue,
+        bazinValue,
         recentUpgrades: undefined,
         etf: undefined,
       };
@@ -317,6 +339,19 @@ export class FundamentalsService {
           ? ((grahamNumber - currentPrice) / currentPrice) * 100
           : undefined;
         grahamValue = { grahamNumber, eps, bookValuePerShare: bvps, marginOfSafety };
+      }
+    }
+
+    // ── Bazin ceiling (stocks only): DPA / 0.06 ───────────────────────────
+    let bazinValue: BazinValue | undefined;
+    if (!isEtf) {
+      const dividendRate = v(sd, 'trailingAnnualDividendRate') ?? v(sd, 'dividendRate');
+      if (dividendRate != null && dividendRate > 0) {
+        const ceilingPrice = dividendRate / 0.06;
+        const marginOfSafety = currentPrice
+          ? ((ceilingPrice - currentPrice) / currentPrice) * 100
+          : undefined;
+        bazinValue = { ceilingPrice, dividendPerShare: dividendRate, marginOfSafety };
       }
     }
 
@@ -430,6 +465,7 @@ export class FundamentalsService {
 
       analystTarget,
       grahamValue,
+      bazinValue,
       recentUpgrades,
       etf,
     };
