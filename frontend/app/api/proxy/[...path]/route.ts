@@ -23,6 +23,11 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
   });
 
   const data = await res.text();
+
+  if (res.status === 204 || data.length === 0) {
+    return new NextResponse(null, { status: res.status });
+  }
+
   return new NextResponse(data, {
     status: res.status,
     headers: { 'content-type': res.headers.get('content-type') ?? 'application/json' },

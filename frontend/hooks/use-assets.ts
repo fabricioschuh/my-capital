@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { assetsService } from '@/services/assets.service';
-import { CreateAssetForm, UpdateAssetForm, TransactionForm } from '@/types';
+import { CreateAssetForm, UpdateAssetForm, TransactionForm, Asset } from '@/types';
 import { toast } from 'sonner';
 import { PORTFOLIO_QUERY_KEY } from './use-portfolio';
 
@@ -54,7 +54,12 @@ export function useDeleteAsset() {
 
   return useMutation({
     mutationFn: (id: string) => assetsService.delete(id),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      // Remove the asset from all cached asset lists immediately
+      queryClient.setQueriesData<Asset[]>(
+        { queryKey: ASSETS_QUERY_KEY, exact: false },
+        (old) => old?.filter((a) => a.id !== id) ?? old,
+      );
       invalidateAll(queryClient);
       toast.success('Asset deleted');
     },
