@@ -742,15 +742,26 @@ export function AnalysisTickerTab() {
   const [loadingList, setLoadingList] = useState(true);
   const { t } = useI18n();
 
-  // Load from API on mount
+  const LS_KEY = 'watchlist-tickers';
+
+  // Load from API on mount, fall back to localStorage
   useEffect(() => {
     watchlistService.getTickers()
-      .then(setTickers)
-      .catch(() => {/* silent — list stays empty */})
+      .then((data) => {
+        setTickers(data);
+        localStorage.setItem(LS_KEY, JSON.stringify(data));
+      })
+      .catch(() => {
+        try {
+          const cached = localStorage.getItem(LS_KEY);
+          if (cached) setTickers(JSON.parse(cached));
+        } catch { /* ignore */ }
+      })
       .finally(() => setLoadingList(false));
   }, []);
 
   const persist = useCallback((next: string[]) => {
+    localStorage.setItem(LS_KEY, JSON.stringify(next));
     watchlistService.saveTickers(next).catch(() => {/* silent */});
   }, []);
 

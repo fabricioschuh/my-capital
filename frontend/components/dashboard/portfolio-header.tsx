@@ -2,10 +2,9 @@
 
 import { PortfolioSummary } from '@/types';
 import { formatCurrency } from '@/lib/utils';
-import { RefreshCw, TrendingUp } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRefreshExchangeRates } from '@/hooks/use-portfolio';
-import { useRefreshPrices } from '@/hooks/use-assets';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n/i18n-context';
 
@@ -15,10 +14,9 @@ interface PortfolioHeaderProps {
 
 export function PortfolioHeader({ summary }: PortfolioHeaderProps) {
   const { mutate: refreshRates, isPending: refreshingRates } = useRefreshExchangeRates();
-  const { mutate: refreshPrices, isPending: refreshingPrices } = useRefreshPrices();
   const { t } = useI18n();
 
-  const isPending = refreshingRates || refreshingPrices;
+  const isPending = refreshingRates;
 
   const { currencyBreakdown: cb, exchangeRates } = summary;
   const hasUSD = cb?.totalUSD > 0;
@@ -84,15 +82,6 @@ export function PortfolioHeader({ summary }: PortfolioHeaderProps) {
         <div className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
           {t('ph.updatedAt')} {new Date(summary.exchangeRates.updatedAt).toLocaleTimeString(dateLocale)}
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refreshPrices()}
-          disabled={isPending}
-        >
-          <TrendingUp className={cn('mr-2 h-4 w-4', refreshingPrices && 'animate-pulse')} />
-          {t('ph.refreshPrices')}
-        </Button>
         <Button
           variant="ghost"
           size="sm"
