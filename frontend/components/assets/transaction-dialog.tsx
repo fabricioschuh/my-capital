@@ -79,11 +79,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAssets, useTransactAsset, useCreateAsset, useUpdateAsset } from '@/hooks/use-assets';
+import { useAssets, useTransactAsset, useCreateAsset, useUpdateAsset, useDeleteAsset } from '@/hooks/use-assets';
 import { useI18n } from '@/lib/i18n/i18n-context';
 import { en } from '@/lib/i18n/translations/en';
 import { Asset } from '@/types';
-import { Loader2, PackagePlus, ArrowLeftRight, ArrowLeft } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeftRight, ArrowLeft, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 
 /* ─── Broker / exchange lists ──────────────────────────────────────────────── */
@@ -968,6 +979,7 @@ interface EditAssetDialogProps {
 export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: EditAssetDialogProps) {
   const config = getCategoryConfig(categorySlug);
   const { mutate: updateAsset, isPending } = useUpdateAsset();
+  const { mutate: deleteAsset, isPending: isDeleting } = useDeleteAsset();
   const [noMaturity, setNoMaturity] = React.useState(false);
   const { t } = useI18n();
 
@@ -1206,8 +1218,33 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
             <p className="text-xs text-muted-foreground">Moeda: <span className="font-medium">{config.currency}</span></p>
           )}
 
-          <DialogFooter className="pt-2">
-            <Button type="submit" disabled={isPending} className="w-full">
+          <DialogFooter className="pt-2 flex-row gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="outline" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0" disabled={isPending || isDeleting}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Remover ativo</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem certeza que deseja remover <span className="font-semibold">{asset.ticker ?? asset.name}</span>? Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => deleteAsset(asset.id, { onSuccess: () => onOpenChange(false) })}
+                  >
+                    {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Remover
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button type="submit" disabled={isPending || isDeleting} className="flex-1">
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Salvar
             </Button>
