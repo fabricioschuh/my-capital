@@ -12,13 +12,24 @@ import {
   TrendingUp, TrendingDown, Minus, ChevronDown, Plus,
   ShieldCheck, Banknote, BarChart3, Globe, Landmark, CandlestickChart,
   Globe2, Building2, Bitcoin, Building, GripVertical, PieChart, AreaChart,
-  Pencil,
+  Pencil, Trash2,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { TransactionDialog, EditAssetDialog } from '@/components/assets/transaction-dialog';
-import { useAssets } from '@/hooks/use-assets';
+import { useAssets, useDeleteAsset } from '@/hooks/use-assets';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -63,6 +74,7 @@ const SUBCATEGORY_ORDER: FixedIncomeSubcategory[] = ['CDI', 'IPCA+', 'Pré-fixad
 
 function AssetRow({ asset, categorySlug }: { asset: Asset; categorySlug: string }) {
   const [editOpen, setEditOpen] = useState(false);
+  const { mutate: deleteAsset } = useDeleteAsset();
   const total = asset.quantity * (asset.marketPrice ?? asset.unitPrice);
 
   return (
@@ -81,7 +93,7 @@ function AssetRow({ asset, categorySlug }: { asset: Asset; categorySlug: string 
             )}
           </div>
         </div>
-        <div className="shrink-0 ml-6 flex items-center gap-2">
+        <div className="shrink-0 ml-6 flex items-center gap-1">
           <p className="text-base font-bold tabular-nums">{formatCurrency(total, asset.currency)}</p>
           <button
             type="button"
@@ -91,6 +103,35 @@ function AssetRow({ asset, categorySlug }: { asset: Asset; categorySlug: string 
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                type="button"
+                onClick={(e) => e.stopPropagation()}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+                title="Remover ativo"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remover ativo</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja remover <span className="font-semibold">{asset.ticker ?? asset.name}</span>? Esta ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => deleteAsset(asset.id)}
+                >
+                  Remover
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
       <EditAssetDialog
