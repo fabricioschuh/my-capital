@@ -13,14 +13,18 @@ export function useAssets(categoryId?: string) {
   });
 }
 
+function invalidateAll(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: ASSETS_QUERY_KEY, exact: false });
+  queryClient.invalidateQueries({ queryKey: PORTFOLIO_QUERY_KEY });
+}
+
 export function useCreateAsset() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (dto: CreateAssetForm) => assetsService.create(dto),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ASSETS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: PORTFOLIO_QUERY_KEY });
+      invalidateAll(queryClient);
       toast.success('Asset created successfully');
     },
     onError: (error: Error) => {
@@ -36,8 +40,7 @@ export function useUpdateAsset() {
     mutationFn: ({ id, dto }: { id: string; dto: UpdateAssetForm }) =>
       assetsService.update(id, dto),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ASSETS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: PORTFOLIO_QUERY_KEY });
+      invalidateAll(queryClient);
       toast.success('Asset updated successfully');
     },
     onError: (error: Error) => {
@@ -52,8 +55,7 @@ export function useDeleteAsset() {
   return useMutation({
     mutationFn: (id: string) => assetsService.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ASSETS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: PORTFOLIO_QUERY_KEY });
+      invalidateAll(queryClient);
       toast.success('Asset deleted');
     },
     onError: (error: Error) => {
