@@ -12,7 +12,7 @@ import {
   TrendingUp, TrendingDown, Minus, ChevronDown, Plus,
   ShieldCheck, Banknote, BarChart3, Globe, Landmark, CandlestickChart,
   Globe2, Building2, Bitcoin, Building, GripVertical, PieChart, AreaChart,
-  Pencil, Trash2,
+  Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -69,6 +69,17 @@ function detectFixedIncomeSubcategory(name: string): FixedIncomeSubcategory {
 }
 
 const SUBCATEGORY_ORDER: FixedIncomeSubcategory[] = ['CDI', 'IPCA+', 'Pré-fixado', 'Outros'];
+
+type SortOrder = 'none' | 'asc' | 'desc';
+
+function sortAssets(assets: Asset[], order: SortOrder): Asset[] {
+  if (order === 'none') return assets;
+  return [...assets].sort((a, b) => {
+    const va = a.quantity * (a.marketPrice ?? a.unitPrice);
+    const vb = b.quantity * (b.marketPrice ?? b.unitPrice);
+    return order === 'asc' ? va - vb : vb - va;
+  });
+}
 
 /* ─── Asset row ─────────────────────────────────────────────────────────────── */
 
@@ -147,7 +158,14 @@ function AssetRow({ asset, categorySlug }: { asset: Asset; categorySlug: string 
 export function CategoryRow({ category, isDragging = false, forceOpen }: CategoryRowProps) {
   const [open, setOpen] = useState(false);
   const [transactionOpen, setTransactionOpen] = useState(false);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('none');
   const { t } = useI18n();
+
+  function cycleSortOrder() {
+    setSortOrder((s) => s === 'none' ? 'desc' : s === 'desc' ? 'asc' : 'none');
+  }
+
+  const SortIcon = sortOrder === 'asc' ? ArrowUp : sortOrder === 'desc' ? ArrowDown : ArrowUpDown;
 
   useEffect(() => {
     if (forceOpen !== undefined) setOpen(forceOpen);
@@ -303,14 +321,31 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
                   {t('cr.empty')}
                 </p>
               )}
+              {!isLoading && assets && assets.length > 1 && (
+                <div className="flex justify-end px-1 pb-1">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); cycleSortOrder(); }}
+                    className={cn(
+                      'flex items-center gap-1 text-xs rounded px-2 py-1 transition-colors',
+                      sortOrder !== 'none'
+                        ? 'text-primary bg-primary/10'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                    )}
+                  >
+                    <SortIcon className="h-3 w-3" />
+                    Valor
+                  </button>
+                </div>
+              )}
               {!isLoading && assets && assets.length > 0 && !['fixed-income', 'emergency-reserve', 'cash'].includes(category.slug) && (
-                assets.map((asset) => (
+                sortAssets(assets, sortOrder).map((asset) => (
                   <AssetRow key={asset.id} asset={asset} categorySlug={category.slug} />
                 ))
               )}
               {!isLoading && assets && assets.length > 0 && ['fixed-income', 'emergency-reserve', 'cash'].includes(category.slug) && (
                 SUBCATEGORY_ORDER.map((sub) => {
-                  const grouped = assets.filter((a) => detectFixedIncomeSubcategory(a.name) === sub);
+                  const grouped = sortAssets(assets.filter((a) => detectFixedIncomeSubcategory(a.name) === sub), sortOrder);
                   if (grouped.length === 0) return null;
                   return (
                     <div key={sub} className="mb-3">
