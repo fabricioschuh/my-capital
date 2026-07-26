@@ -177,7 +177,7 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
 
   const { difference } = category;
   const hasAssets = category.assets > 0;
-  const DifferenceIcon = difference > 0 ? TrendingUp : difference < 0 ? TrendingDown : Minus;
+
   const CategoryIcon = CATEGORY_ICONS[category.slug] ?? Landmark;
 
   const { attributes, listeners, setNodeRef, transform, transition, isSorting } = useSortable({
@@ -259,23 +259,9 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
               <p className="font-bold text-lg tabular-nums">
                 {hasAssets ? formatCurrency(category.total) : formatCurrency(0)}
               </p>
-              <div className="h-5 flex items-center justify-end">
-                {hasAssets ? (
-                  <span className={cn(
-                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold',
-                    difference > 0
-                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                      : difference < 0
-                        ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                        : 'bg-muted text-muted-foreground',
-                  )}>
-                    <DifferenceIcon className="h-3 w-3" />
-                    <span className="md:hidden">{formatDifference(difference)}</span>
-                  </span>
-                ) : (
-                  <span className="text-xs text-muted-foreground/50">{t('cr.noAssets')}</span>
-                )}
-              </div>
+              {!hasAssets && (
+                <p className="text-xs text-muted-foreground/50 text-right md:hidden">{t('cr.noAssets')}</p>
+              )}
             </div>
 
             <ChevronDown
