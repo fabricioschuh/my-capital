@@ -270,7 +270,7 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
                         : 'bg-muted text-muted-foreground',
                   )}>
                     <DifferenceIcon className="h-3 w-3" />
-                    {formatDifference(difference)}
+                    <span className="md:hidden">{formatDifference(difference)}</span>
                   </span>
                 ) : (
                   <span className="text-xs text-muted-foreground/50">{t('cr.noAssets')}</span>
