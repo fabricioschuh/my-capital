@@ -13,5 +13,6 @@ export interface Asset extends Entity {
   currency: Currency;
   broker?: string;
   notes?: string;
+  fiIndexer?: string;
   isActive: boolean;
 }

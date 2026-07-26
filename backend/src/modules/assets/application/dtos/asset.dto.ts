@@ -46,6 +46,11 @@ export class CreateAssetDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiPropertyOptional({ description: 'Fixed income indexer: CDI | IPCA | Prefixado' })
+  @IsOptional()
+  @IsString()
+  fiIndexer?: string;
 }
 
 export class UpdateAssetDto {
@@ -85,6 +90,11 @@ export class UpdateAssetDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiPropertyOptional({ description: 'Fixed income indexer: CDI | IPCA | Prefixado' })
+  @IsOptional()
+  @IsString()
+  fiIndexer?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -140,6 +150,9 @@ export class AssetResponseDto {
 
   @ApiPropertyOptional()
   notes?: string;
+
+  @ApiPropertyOptional()
+  fiIndexer?: string;
 
   @ApiProperty()
   isActive: boolean;

@@ -91,6 +91,7 @@ export class AssetsService {
       currency: asset.currency,
       broker: asset.broker,
       notes: asset.notes,
+      fiIndexer: asset.fiIndexer,
       isActive: asset.isActive,
       createdAt: asset.createdAt,
       updatedAt: asset.updatedAt,

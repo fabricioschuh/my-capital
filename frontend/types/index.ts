@@ -24,6 +24,7 @@ export interface Asset {
   currency: Currency;
   broker?: string;
   notes?: string;
+  fiIndexer?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -70,6 +71,7 @@ export interface CreateAssetForm {
   currency: Currency;
   broker?: string;
   notes?: string;
+  fiIndexer?: string;
 }
 
 export interface UpdateAssetForm {
@@ -80,6 +82,7 @@ export interface UpdateAssetForm {
   currency?: Currency;
   broker?: string;
   notes?: string;
+  fiIndexer?: string;
   categoryId?: string;
 }
 

@@ -731,6 +731,7 @@ function NewAssetForm({
         unitPrice: data.totalValue,
         currency: data.currency,
         broker: data.broker || undefined,
+        fiIndexer: data.fiIndexer || undefined,
       },
       { onSuccess },
     );
@@ -1001,7 +1002,9 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
     return undefined;
   }
 
-  const parsedIndexer = config.isFixedIncome ? parseIndexer(asset.name) : undefined;
+  const parsedIndexer = config.isFixedIncome
+    ? ((asset.fiIndexer as 'CDI' | 'IPCA' | 'Prefixado' | undefined) ?? parseIndexer(asset.name))
+    : undefined;
   const parsedRate = config.isFixedIncome ? parseRate(asset.name, parsedIndexer) : undefined;
 
   const {
@@ -1027,7 +1030,9 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
 
   // Reset form when asset changes
   useEffect(() => {
-    const pi = config.isFixedIncome ? parseIndexer(asset.name) : undefined;
+    const pi = config.isFixedIncome
+      ? ((asset.fiIndexer as 'CDI' | 'IPCA' | 'Prefixado' | undefined) ?? parseIndexer(asset.name))
+      : undefined;
     reset({
       name: asset.name,
       ticker: asset.ticker ?? '',
@@ -1067,6 +1072,7 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
           unitPrice: data.totalValue,
           currency: data.currency,
           broker: data.broker || undefined,
+          fiIndexer: data.fiIndexer || undefined,
         },
       },
       { onSuccess: () => onOpenChange(false) },

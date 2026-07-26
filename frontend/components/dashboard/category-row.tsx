@@ -60,8 +60,15 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 
 type FixedIncomeSubcategory = 'CDI' | 'IPCA+' | 'Pré-fixado' | 'Outros';
 
-function detectFixedIncomeSubcategory(name: string): FixedIncomeSubcategory {
-  const n = name.toUpperCase();
+function detectFixedIncomeSubcategory(asset: Asset): FixedIncomeSubcategory {
+  // Prefer explicit fiIndexer stored in DB
+  if (asset.fiIndexer) {
+    if (asset.fiIndexer === 'IPCA') return 'IPCA+';
+    if (asset.fiIndexer === 'CDI') return 'CDI';
+    if (asset.fiIndexer === 'Prefixado') return 'Pré-fixado';
+  }
+  // Fallback: parse from name
+  const n = asset.name.toUpperCase();
   if (/\bIPCA\b/.test(n)) return 'IPCA+';
   if (/\bCDI\b/.test(n)) return 'CDI';
   if (/\bPRE[F]?\b|PREFIXADO|A\.A\.|% A\.A/.test(n)) return 'Pré-fixado';
@@ -331,13 +338,17 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
               )}
               {!isLoading && assets && assets.length > 0 && ['fixed-income', 'emergency-reserve', 'cash'].includes(category.slug) && (
                 SUBCATEGORY_ORDER.map((sub) => {
-                  const grouped = sortAssets(assets.filter((a) => detectFixedIncomeSubcategory(a.name) === sub), sortOrder);
+                  const grouped = sortAssets(assets.filter((a) => detectFixedIncomeSubcategory(a) === sub), sortOrder);
                   if (grouped.length === 0) return null;
+                  const subTotal = grouped.reduce((sum, a) => sum + a.quantity * (a.marketPrice ?? a.unitPrice), 0);
                   return (
                     <div key={sub} className="mb-3">
-                      <div className="px-1 pb-1.5 pt-2">
+                      <div className="px-1 pb-1.5 pt-2 flex items-center justify-between">
                         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                           {sub}
+                        </span>
+                        <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+                          {formatCurrency(subTotal)}
                         </span>
                       </div>
                       <div className="space-y-1">
