@@ -982,6 +982,7 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
   const { mutate: updateAsset, isPending } = useUpdateAsset();
   const { mutate: deleteAsset, isPending: isDeleting } = useDeleteAsset();
   const [noMaturity, setNoMaturity] = React.useState(false);
+  const [hasUserEdited, setHasUserEdited] = React.useState(false);
   const { t } = useI18n();
 
   const defaultCurrency = asset.currency;
@@ -1044,6 +1045,7 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
       fiRate: config.isFixedIncome ? parseRate(asset.name, pi) : undefined,
     });
     setNoMaturity(false);
+    setHasUserEdited(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asset.id, open]);
 
@@ -1056,11 +1058,12 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
 
   // Auto-generate name for fixed income when fields change
   useEffect(() => {
+    if (!hasUserEdited) return;
     if (config.isFixedIncome && (fiIndexer || broker)) {
       const suggested = buildFixedIncomeName(broker, fiIndexer, fiRate, maturity);
       if (suggested) setValue('name', suggested);
     }
-  }, [broker, fiIndexer, fiRate, maturity, config.isFixedIncome, setValue]);
+  }, [broker, fiIndexer, fiRate, maturity, config.isFixedIncome, setValue, hasUserEdited]);
 
   const onSubmit = (data: NewAssetFormValues) => {
     updateAsset(
@@ -1097,7 +1100,7 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
                 <Label>{t('td.indexer')}</Label>
                 <Select
                   value={fiIndexer ?? ''}
-                  onValueChange={(v) => setValue('fiIndexer', v as 'CDI' | 'IPCA' | 'Prefixado')}
+                  onValueChange={(v) => { setHasUserEdited(true); setValue('fiIndexer', v as 'CDI' | 'IPCA' | 'Prefixado'); }}
                 >
                   <SelectTrigger><SelectValue placeholder={t('td.selectIndexer')} /></SelectTrigger>
                   <SelectContent>
@@ -1110,7 +1113,7 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
               {fiIndexer && (
                 <div className="space-y-1.5">
                   <Label htmlFor="edit-fiRate">{indexerRateLabel(fiIndexer)}</Label>
-                  <Input id="edit-fiRate" type="number" step="0.01" min="0" placeholder={indexerRatePlaceholder(fiIndexer)} {...register('fiRate')} />
+                  <Input id="edit-fiRate" type="number" step="0.01" min="0" placeholder={indexerRatePlaceholder(fiIndexer)} {...register('fiRate')} onChange={(e) => { setHasUserEdited(true); register('fiRate').onChange(e); }} />
                 </div>
               )}
             </div>
@@ -1120,7 +1123,7 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
           {config.isFixedIncome && (
             <div className="space-y-1.5">
               <Label>{t(config.brokerLabelKey)}</Label>
-              <BrokerInput placeholder={config.brokerPlaceholder} slug={categorySlug} value={broker ?? ''} onChange={(v) => setValue('broker', v)} />
+              <BrokerInput placeholder={config.brokerPlaceholder} slug={categorySlug} value={broker ?? ''} onChange={(v) => { setHasUserEdited(true); setValue('broker', v); }} />
             </div>
           )}
 
@@ -1136,7 +1139,7 @@ export function EditAssetDialog({ asset, categorySlug, open, onOpenChange }: Edi
                   </label>
                 )}
               </div>
-              {!noMaturity && <Input id="edit-maturity" type="month" {...register('maturity')} />}
+              {!noMaturity && <Input id="edit-maturity" type="month" {...register('maturity')} onChange={(e) => { setHasUserEdited(true); register('maturity').onChange(e); }} />}
             </div>
           )}
 
