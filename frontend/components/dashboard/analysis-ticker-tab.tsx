@@ -753,8 +753,23 @@ export function AnalysisTickerTab() {
   useEffect(() => {
     watchlistService.getTickers()
       .then((data) => {
-        setTickers(data);
-        localStorage.setItem(LS_KEY, JSON.stringify(data));
+        if (data.length > 0) {
+          setTickers(data);
+          localStorage.setItem(LS_KEY, JSON.stringify(data));
+        } else {
+          // API returned empty — keep whatever is in localStorage
+          try {
+            const cached = localStorage.getItem(LS_KEY);
+            if (cached) {
+              const local = JSON.parse(cached) as string[];
+              if (local.length > 0) {
+                setTickers(local);
+                // Sync localStorage data back to API
+                watchlistService.saveTickers(local).catch(() => {});
+              }
+            }
+          } catch { /* ignore */ }
+        }
       })
       .catch(() => {
         try {
@@ -767,7 +782,9 @@ export function AnalysisTickerTab() {
 
   const persist = useCallback((next: string[]) => {
     localStorage.setItem(LS_KEY, JSON.stringify(next));
-    watchlistService.saveTickers(next).catch(() => {/* silent */});
+    watchlistService.saveTickers(next).catch((err) => {
+      console.error('[watchlist] Failed to save tickers:', err);
+    });
   }, []);
 
   const addTicker = (raw: string) => {
