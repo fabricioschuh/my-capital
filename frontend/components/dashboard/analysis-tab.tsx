@@ -187,8 +187,10 @@ function AllocationTable({ summary }: { summary: PortfolioSummary }) {
                       <span className="text-amber-600 dark:text-amber-400 font-medium">
                         +{formatCurrency(toInvest)}
                       </span>
-                    ) : (
+                    ) : cat.difference === 0 ? (
                       <span className="text-emerald-600 dark:text-emerald-400">✓</span>
+                    ) : (
+                      <span>—</span>
                     )}
                   </td>
                 </tr>
