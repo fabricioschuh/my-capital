@@ -736,13 +736,18 @@ function TickerRow({
 /* ─── Main component ────────────────────────────────────────────────────────── */
 
 export function AnalysisTickerTab() {
-  const [tickers, setTickers] = useState<string[]>([]);
+  const LS_KEY = 'watchlist-tickers';
+
+  const [tickers, setTickers] = useState<string[]>(() => {
+    try {
+      const cached = typeof window !== 'undefined' ? localStorage.getItem(LS_KEY) : null;
+      return cached ? JSON.parse(cached) : [];
+    } catch { return []; }
+  });
   const [inputValue, setInputValue] = useState('');
   const [allOpen, setAllOpen] = useState<boolean | undefined>(undefined);
   const [loadingList, setLoadingList] = useState(true);
   const { t } = useI18n();
-
-  const LS_KEY = 'watchlist-tickers';
 
   // Load from API on mount, fall back to localStorage
   useEffect(() => {
