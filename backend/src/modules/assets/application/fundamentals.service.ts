@@ -149,15 +149,20 @@ export class FundamentalsService {
   private async analyzeBR(ticker: string): Promise<FundamentalsResult> {
     try {
       const url = `https://brapi.dev/api/quote/${encodeURIComponent(ticker)}?modules=summaryProfile,defaultKeyStatistics,financialData&token=anonymous`;
-      const res = await fetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-        signal: AbortSignal.timeout(12000),
-      });
 
-      if (!res.ok) throw new Error(`brapi status ${res.status}`);
+      // Fetch brapi + Yahoo in parallel; Yahoo provides analyst targets (.SA suffix)
+      const [brapiRes, yahooAnalyst] = await Promise.all([
+        fetch(url, {
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+          signal: AbortSignal.timeout(12000),
+        }),
+        this.fetchYahooAnalystTarget(ticker + '.SA'),
+      ]);
+
+      if (!brapiRes.ok) throw new Error(`brapi status ${brapiRes.status}`);
 
       /* eslint-disable @typescript-eslint/no-explicit-any */
-      const body = await res.json() as any;
+      const body = await brapiRes.json() as any;
       const r = body?.results?.[0];
       if (!r) throw new Error(`No brapi data for ${ticker}`);
 
@@ -189,6 +194,15 @@ export class FundamentalsService {
         bazinValue = { ceilingPrice, dividendPerShare: dividendRate, marginOfSafety };
       }
 
+      // Recalculate analystTarget upside with brapi's currentPrice (more accurate for BR)
+      let analystTarget = yahooAnalyst;
+      if (analystTarget?.targetMean != null && currentPrice != null) {
+        analystTarget = {
+          ...analystTarget,
+          upsideMean: ((analystTarget.targetMean - currentPrice) / currentPrice) * 100,
+        };
+      }
+
       return {
         ticker,
         market: 'BR',
@@ -199,7 +213,7 @@ export class FundamentalsService {
         currentPrice,
         fiftyTwoWeekLow: r.fiftyTwoWeekLow ?? undefined,
         fiftyTwoWeekHigh: r.fiftyTwoWeekHigh ?? undefined,
-        fiftyDayAverage: undefined,   // brapi doesn't return moving averages
+        fiftyDayAverage: undefined,
         twoHundredDayAverage: undefined,
 
         trailingPE: r.priceEarnings ?? ks.trailingPE ?? undefined,
@@ -227,7 +241,7 @@ export class FundamentalsService {
 
         marketCap: r.marketCap ?? ks.marketCap ?? undefined,
 
-        analystTarget: undefined,  // brapi doesn't provide analyst targets for BR
+        analystTarget,
         grahamValue,
         bazinValue,
         recentUpgrades: undefined,
@@ -237,6 +251,53 @@ export class FundamentalsService {
       this.logger.warn(`brapi.dev failed for ${ticker}: ${(err as Error).message} — falling back to Yahoo`);
       // Fallback to Yahoo Finance with .SA suffix
       return this.analyzeYahoo(ticker + '.SA', 'BR', 'BRL');
+    }
+  }
+
+  // ── Fetch only analyst target fields from Yahoo (for BR tickers) ─────────────
+  private async fetchYahooAnalystTarget(yahooTicker: string): Promise<AnalystTarget | undefined> {
+    try {
+      const crumb = await this.getYahooCrumb();
+      const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(yahooTicker)}?modules=financialData${crumb ? `&crumb=${encodeURIComponent(crumb.crumb)}` : ''}`;
+      const cookieHeader = crumb ? { Cookie: crumb.cookie } : {};
+
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0', ...cookieHeader },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!res.ok) return undefined;
+
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      const body = await res.json() as any;
+      const fd = body?.quoteSummary?.result?.[0]?.financialData ?? {};
+
+      const v = (key: string): number | undefined => {
+        const raw = fd[key];
+        if (raw == null) return undefined;
+        if (typeof raw === 'number') return raw;
+        if (typeof raw === 'object' && raw.raw != null) return raw.raw;
+        return undefined;
+      };
+
+      const targetMean = v('targetMeanPrice');
+      const targetHigh = v('targetHighPrice');
+      const targetLow  = v('targetLowPrice');
+      const nAnalysts  = v('numberOfAnalystOpinions');
+
+      if (targetMean == null && targetHigh == null) return undefined;
+
+      return {
+        targetMean,
+        targetHigh,
+        targetLow,
+        targetMedian: v('targetMedianPrice'),
+        recommendationKey: fd.recommendationKey ?? undefined,
+        numberOfAnalysts: nAnalysts,
+        upsideMean: undefined, // recalculated in analyzeBR with brapi price
+      };
+    } catch {
+      return undefined;
     }
   }
 
