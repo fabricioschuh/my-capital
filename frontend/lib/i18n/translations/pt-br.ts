@@ -81,6 +81,7 @@ export const ptBr: typeof import('./en').en = {
   'att.disclaimer': 'Dados via Yahoo Finance. Não constitui recomendação de investimento.',
   'att.inList': '{n} ativo',
   'att.inListPlural': '{n} ativos',
+  'att.drag': 'Arraste para reordenar',
 
   // Signals
   'sig.cheap': 'Barato',

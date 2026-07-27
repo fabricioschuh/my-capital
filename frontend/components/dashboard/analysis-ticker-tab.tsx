@@ -6,7 +6,7 @@ import { FundamentalsResult, BazinValue, EtfData, RecentUpgrade } from '@/types'
 import { watchlistService } from '@/services/watchlist.service';
 import {
   Loader2, Search, TrendingUp, TrendingDown, Minus, Info,
-  ChevronDown, X, Plus, ChevronsDownUp, ChevronsUpDown,
+  ChevronDown, X, Plus, ChevronsDownUp, ChevronsUpDown, GripVertical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n/i18n-context';
@@ -621,10 +621,18 @@ function TickerRow({
   ticker,
   forceOpen,
   onRemove,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  isDragOver,
 }: {
   ticker: string;
   forceOpen?: boolean;
   onRemove: (t: string) => void;
+  onDragStart: (ticker: string) => void;
+  onDragOver: (e: React.DragEvent, ticker: string) => void;
+  onDrop: (ticker: string) => void;
+  isDragOver: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const { t } = useI18n();
@@ -641,17 +649,33 @@ function TickerRow({
   const marketLabel = data?.market === 'BR' ? '🇧🇷 B3' : data?.market === 'US' ? '🇺🇸 US' : '';
 
   return (
-    <div className={cn(
-      'rounded-xl border border-border/60 bg-card overflow-hidden transition-all duration-200 hover:border-primary/20 hover:shadow-sm',
-    )}>
+    <div
+      className={cn(
+        'rounded-xl border border-border/60 bg-card overflow-hidden transition-all duration-200 hover:border-primary/20 hover:shadow-sm',
+        isDragOver && 'border-primary/60 shadow-md ring-1 ring-primary/30',
+      )}
+      draggable
+      onDragStart={() => onDragStart(ticker)}
+      onDragOver={(e) => onDragOver(e, ticker)}
+      onDrop={(e) => { e.preventDefault(); onDrop(ticker); }}
+      onDragEnd={() => onDrop('')}
+    >
       <div className="h-0.5 bg-primary/30" />
 
       {/* Header */}
       <div className="flex items-center gap-2 pr-3">
+        {/* Drag handle */}
+        <div
+          className="pl-3 py-4 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors shrink-0"
+          title={t('att.drag')}
+        >
+          <GripVertical className="h-4 w-4" />
+        </div>
+
         {/* Expand button */}
         <button
           type="button"
-          className="flex flex-1 items-center gap-4 px-4 py-4 text-left min-w-0"
+          className="flex flex-1 items-center gap-4 py-4 pr-2 text-left min-w-0"
           onClick={() => setOpen((v) => !v)}
         >
           {/* Ticker + name */}
@@ -747,6 +771,8 @@ export function AnalysisTickerTab() {
   const [inputValue, setInputValue] = useState('');
   const [allOpen, setAllOpen] = useState<boolean | undefined>(undefined);
   const [loadingList, setLoadingList] = useState(true);
+  const [dragTicker, setDragTicker] = useState<string | null>(null);
+  const [dragOverTicker, setDragOverTicker] = useState<string | null>(null);
   const { t } = useI18n();
 
   // Load from API on mount, fall back to localStorage
@@ -804,6 +830,32 @@ export function AnalysisTickerTab() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') addTicker(inputValue);
+  };
+
+  const handleDragStart = (ticker: string) => {
+    setDragTicker(ticker);
+  };
+
+  const handleDragOver = (e: React.DragEvent, ticker: string) => {
+    e.preventDefault();
+    if (ticker !== dragTicker) setDragOverTicker(ticker);
+  };
+
+  const handleDrop = (target: string) => {
+    if (!dragTicker || !target || dragTicker === target) {
+      setDragTicker(null);
+      setDragOverTicker(null);
+      return;
+    }
+    const next = [...tickers];
+    const from = next.indexOf(dragTicker);
+    const to = next.indexOf(target);
+    next.splice(from, 1);
+    next.splice(to, 0, dragTicker);
+    setTickers(next);
+    persist(next);
+    setDragTicker(null);
+    setDragOverTicker(null);
   };
 
   return (
@@ -903,6 +955,10 @@ export function AnalysisTickerTab() {
               ticker={t}
               forceOpen={allOpen}
               onRemove={removeTicker}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              isDragOver={dragOverTicker === t}
             />
           ))}
         </div>

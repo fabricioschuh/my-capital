@@ -81,6 +81,7 @@ export const en = {
   'att.disclaimer': 'Data via Yahoo Finance. Not investment advice.',
   'att.inList': '{n} asset',
   'att.inListPlural': '{n} assets',
+  'att.drag': 'Drag to reorder',
 
   // Signals
   'sig.cheap': 'Cheap',
