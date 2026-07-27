@@ -328,7 +328,7 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
     namePlaceholder: 'ex: US Treasury 2030',
     tickerMode: 'optional',
     tickerPlaceholder: 'ex: T 4.5 2030',
-    currency: 'USD',
+    currency: 'free',
     brokerLabelKey: 'cc.custodian',
     brokerPlaceholder: 'ex: Interactive Brokers',
     showMaturity: true,
