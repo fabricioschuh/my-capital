@@ -63,7 +63,13 @@ export function Dashboard() {
   const { mutate: updateCategory } = useUpdateCategory();
   const { t } = useI18n();
 
-  const [tab, setTab] = useState<Tab>('assets');
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.replace('#', '') as Tab;
+      if (['assets', 'portfolio', 'analysis'].includes(hash)) return hash;
+    }
+    return 'assets';
+  });
   const [orderedCategories, setOrderedCategories] = useState<CategorySummary[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [allOpen, setAllOpen] = useState<boolean | undefined>(undefined);
@@ -150,7 +156,10 @@ export function Dashboard() {
           <button
             key={key}
             type="button"
-            onClick={() => setTab(key)}
+            onClick={() => {
+              setTab(key);
+              window.location.hash = key;
+            }}
             className={cn(
               'rounded-md px-4 py-1.5 text-sm font-medium transition-all',
               tab === key
@@ -251,7 +260,9 @@ export function Dashboard() {
       )}
 
       {/* ── Analysis tab ── */}
-      {tab === 'analysis' && <AnalysisTickerTab />}
+      <div className={tab !== 'analysis' ? 'hidden' : undefined}>
+        <AnalysisTickerTab />
+      </div>
     </div>
   );
 }
