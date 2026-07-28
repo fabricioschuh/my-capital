@@ -20,8 +20,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 const CATEGORIES_TABLE = 'my-capital-categories';
 
 const SLUG_TO_PT_NAME: Record<string, string> = {
-  'emergency-reserve':          'Reserva de Emergência',
-  'cash':                       'Caixa',
+  'daily-liquidity':            'Liquidez Diária',
   'fixed-income':               'Renda Fixa Nacional',
   'fixed-income-international': 'Renda Fixa Internacional',
   'private-pension':            'Previdência Privada',

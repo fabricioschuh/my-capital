@@ -22,6 +22,7 @@ import { useUpdateCategory } from '@/hooks/use-categories';
 import { CategoryRow } from './category-row';
 import { PortfolioHeader } from './portfolio-header';
 import { ConfigureTargetsDialog } from './configure-targets-dialog';
+import { ImportInvestidor10Button } from './import-investidor10-button';
 import dynamic from 'next/dynamic';
 
 const AnalysisTab = dynamic(
@@ -130,7 +131,10 @@ export function Dashboard() {
           <h1 className="text-3xl font-bold tracking-tight">{t('dash.title')}</h1>
           <p className="mt-1 text-muted-foreground">{t('dash.subtitle')}</p>
         </div>
-        <ConfigureTargetsDialog />
+        <div className="flex items-center gap-2">
+          <ImportInvestidor10Button />
+          <ConfigureTargetsDialog />
+        </div>
       </div>
 
       {/* Error state */}

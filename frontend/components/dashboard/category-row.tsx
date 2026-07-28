@@ -10,7 +10,7 @@ import {
 } from '@/lib/utils';
 import {
   TrendingUp, TrendingDown, Minus, ChevronDown, Plus,
-  ShieldCheck, Banknote, BarChart3, Globe, Landmark, CandlestickChart,
+  Banknote, BarChart3, Globe, Landmark, CandlestickChart,
   Globe2, Building2, Bitcoin, Building, GripVertical, PieChart, AreaChart,
   Pencil, Trash2, ArrowUp, ArrowDown,
   type LucideIcon,
@@ -42,8 +42,7 @@ interface CategoryRowProps {
 }
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  'emergency-reserve':          ShieldCheck,
-  'cash':                       Banknote,
+  'daily-liquidity':           Banknote,
   'fixed-income':               BarChart3,
   'fixed-income-international': Globe,
   'private-pension':            Landmark,
@@ -58,7 +57,7 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 
 /* ─── Fixed-income subcategory detection ───────────────────────────────────── */
 
-type FixedIncomeSubcategory = 'CDI' | 'IPCA+' | 'Pré-fixado' | 'Outros';
+type FixedIncomeSubcategory = 'CDI' | 'IPCA+' | 'Pré-fixado';
 
 function detectFixedIncomeSubcategory(asset: Asset): FixedIncomeSubcategory {
   // Prefer explicit fiIndexer stored in DB
@@ -71,11 +70,10 @@ function detectFixedIncomeSubcategory(asset: Asset): FixedIncomeSubcategory {
   const n = asset.name.toUpperCase();
   if (/\bIPCA\b/.test(n)) return 'IPCA+';
   if (/\bCDI\b/.test(n)) return 'CDI';
-  if (/\bPRE[F]?\b|PREFIXADO|A\.A\.|% A\.A/.test(n)) return 'Pré-fixado';
-  return 'Outros';
+  return 'Pré-fixado';
 }
 
-const SUBCATEGORY_ORDER: FixedIncomeSubcategory[] = ['CDI', 'IPCA+', 'Pré-fixado', 'Outros'];
+const SUBCATEGORY_ORDER: FixedIncomeSubcategory[] = ['CDI', 'IPCA+', 'Pré-fixado'];
 
 type SortOrder = 'none' | 'asc' | 'desc';
 
@@ -326,12 +324,12 @@ export function CategoryRow({ category, isDragging = false, forceOpen }: Categor
                   </button>
                 </div>
               )}
-              {!isLoading && assets && assets.length > 0 && !['fixed-income', 'emergency-reserve', 'cash'].includes(category.slug) && (
+              {!isLoading && assets && assets.length > 0 && !['fixed-income', 'daily-liquidity'].includes(category.slug) && (
                 sortAssets(assets, sortOrder).map((asset) => (
                   <AssetRow key={asset.id} asset={asset} categorySlug={category.slug} />
                 ))
               )}
-              {!isLoading && assets && assets.length > 0 && ['fixed-income', 'emergency-reserve', 'cash'].includes(category.slug) && (
+              {!isLoading && assets && assets.length > 0 && ['fixed-income', 'daily-liquidity'].includes(category.slug) && (
                 SUBCATEGORY_ORDER.map((sub) => {
                   const grouped = sortAssets(assets.filter((a) => detectFixedIncomeSubcategory(a) === sub), sortOrder);
                   if (grouped.length === 0) return null;

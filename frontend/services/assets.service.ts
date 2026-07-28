@@ -44,4 +44,13 @@ export const assetsService = {
     const { data } = await apiClient.get<FundamentalsResult>(`/assets/fundamentals/${encodeURIComponent(ticker)}`);
     return data;
   },
+
+  importInvestidor10: async (file: File): Promise<{ inserted: number; updated: number; skipped: number; errors: string[] }> => {
+    const form = new FormData();
+    form.append('file', file);
+    const { data } = await apiClient.post('/import/investidor10', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+  },
 };

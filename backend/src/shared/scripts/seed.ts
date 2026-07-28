@@ -34,8 +34,7 @@ const CATEGORIES_TABLE = 'my-capital-categories';
 const ASSETS_TABLE = 'my-capital-assets';
 
 const DEFAULT_CATEGORIES = [
-  { name: 'Reserva de Emergência', slug: 'emergency-reserve', targetPercentage: 10, order: 1 },
-  { name: 'Caixa', slug: 'cash', targetPercentage: 2, order: 2 },
+  { name: 'Liquidez Diária', slug: 'daily-liquidity', targetPercentage: 12, order: 1 },
   { name: 'Renda Fixa Nacional', slug: 'fixed-income', targetPercentage: 25, order: 3 },
   { name: 'Renda Fixa Internacional', slug: 'fixed-income-international', targetPercentage: 5, order: 4 },
   { name: 'Previdência Privada', slug: 'private-pension', targetPercentage: 10, order: 5 },
@@ -150,10 +149,9 @@ async function seedAssets(slugToId: Record<string, string>): Promise<void> {
 
   const sampleAssets = [
     // Emergency Reserve
-    { categorySlug: 'emergency-reserve', name: 'Nubank CDB 100% CDI', ticker: 'NUCDB100', quantity: 1, unitPrice: 30000, currency: 'BRL', broker: 'Nubank' },
-    { categorySlug: 'emergency-reserve', name: 'Picpay CDB 102% CDI', ticker: 'PICDB102', quantity: 1, unitPrice: 28000, currency: 'BRL', broker: 'PicPay' },
-    // Cash
-    { categorySlug: 'cash', name: 'Conta Corrente Itaú', quantity: 1, unitPrice: 5000, currency: 'BRL', broker: 'Itaú' },
+    { categorySlug: 'daily-liquidity', name: 'Nubank CDB 100% CDI', ticker: 'NUCDB100', quantity: 1, unitPrice: 30000, currency: 'BRL', broker: 'Nubank' },
+    { categorySlug: 'daily-liquidity', name: 'Picpay CDB 102% CDI', ticker: 'PICDB102', quantity: 1, unitPrice: 28000, currency: 'BRL', broker: 'PicPay' },
+    { categorySlug: 'daily-liquidity', name: 'Conta Corrente Itaú', quantity: 1, unitPrice: 5000, currency: 'BRL', broker: 'Itaú' },
     // Fixed Income
     { categorySlug: 'fixed-income', name: 'Tesouro IPCA+ 2035', ticker: 'BCIMB350', quantity: 200, unitPrice: 630, currency: 'BRL', broker: 'XP Investimentos' },
     { categorySlug: 'fixed-income', name: 'Tesouro Selic 2027', ticker: 'LFT270', quantity: 50, unitPrice: 14200, currency: 'BRL', broker: 'XP Investimentos' },

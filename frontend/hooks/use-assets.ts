@@ -104,7 +104,21 @@ export function useTransactAsset() {
   });
 }
 
-export function useFundamentals(ticker: string | null) {
+export function useImportInvestidor10() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (file: File) => assetsService.importInvestidor10(file),
+    onSuccess: (result) => {
+      invalidateAll(queryClient);
+      const msg = `Importação concluída: ${result.inserted} inseridos, ${result.updated} atualizados${result.skipped > 0 ? `, ${result.skipped} ignorados` : ''}`;
+      toast.success(msg);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message ?? 'Falha na importação');
+    },
+  });
+}
   return useQuery({
     queryKey: ['fundamentals', ticker],
     queryFn: () => assetsService.getFundamentals(ticker!),

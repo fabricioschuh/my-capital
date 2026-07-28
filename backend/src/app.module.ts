@@ -8,6 +8,7 @@ import { PortfolioModule } from './modules/portfolio/portfolio.module';
 import { ExchangeModule } from './modules/exchange/exchange.module';
 import { WatchlistModule } from './modules/watchlist/watchlist.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ImportModule } from './modules/import/import.module';
 import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
 import { DynamoDBModule } from './shared/infrastructure/dynamodb/dynamodb.module';
 import appConfig from './shared/config/app.config';
@@ -34,6 +35,7 @@ import exchangeConfig from './shared/config/exchange.config';
     ExchangeModule,
     WatchlistModule,
     AuthModule,
+    ImportModule,
   ],
   providers: [
     {

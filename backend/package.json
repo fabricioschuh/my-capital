@@ -21,7 +21,11 @@
     "seed": "ts-node src/shared/scripts/seed.ts",
     "clear-assets": "ts-node src/shared/scripts/clear-assets.ts",
     "rename-categories-pt": "ts-node src/shared/scripts/rename-categories-pt.ts",
-    "add-missing-categories": "ts-node src/shared/scripts/add-missing-categories.ts"
+    "add-missing-categories": "ts-node src/shared/scripts/add-missing-categories.ts",
+    "merge-daily-liquidity": "ts-node src/shared/scripts/merge-cash-into-daily-liquidity.ts",
+    "backup": "ts-node src/shared/scripts/backup.ts",
+    "clear": "ts-node src/shared/scripts/clear.ts",
+    "import-investidor10": "ts-node src/shared/scripts/import-investidor10.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.0.0",
